@@ -26,7 +26,7 @@ int main(int argc, char *argv[])
         int minColor = dsatur(graph, vertices);
 
         printf("DSatur algorithm completed. \n");
-        printf("Minimum number of colors required: %d\n", minColor);
+        printf("DSatur: %d\n", minColor);
 
         int *nodeWeights = (int *)calloc(vertices, sizeof(int));
         convertToWeightedGraph(graph, vertices);
@@ -46,7 +46,7 @@ int main(int argc, char *argv[])
 
         int minColorEnhanced = enhancedDSatur(graph, nodeWeights, vertices);
         printf("Enhanced DSatur algorithm completed. \n");
-        printf("Minimum number of colors required: %d\n", minColorEnhanced);
+        printf("Enhanced DSatur: %d\n", minColorEnhanced);
 
         printf("minColor = %d   enhanced = %d \n", minColor, minColorEnhanced);
 
