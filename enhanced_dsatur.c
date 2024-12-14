@@ -1,10 +1,17 @@
 #include <stdbool.h>
 #include <stdio.h>
 #include <stdlib.h>
+#include <time.h>
+
+// Global variable to store the total execution time
+double totalTime = 0.0;
 
 // Function to convert the graph to a weighted graph
 void convertToWeightedGraph(int **graph, int vertices)
 {
+    // Time measurement start
+    clock_t start_time = clock();
+
     int *nodeValues = (int *)malloc(vertices * sizeof(int));          // Node degree values
     int **tempEdgeWeights = (int **)malloc(vertices * sizeof(int *)); // Temporary edge weights
     int *nodeWeights = (int *)malloc(vertices * sizeof(int));         // Final node weights
@@ -69,6 +76,13 @@ void convertToWeightedGraph(int **graph, int vertices)
         free(tempEdgeWeights[i]);
     }
     free(tempEdgeWeights);
+
+    // Time measurement end
+    clock_t end_time = clock();
+    double elapsed_time = ((double)(end_time - start_time)) / CLOCKS_PER_SEC * 1000; // Milisaniye cinsinden
+    totalTime += elapsed_time; // Toplam süreye ekle
+
+    printf("convertToWeightedGraph completed in: %.2f ms\n", elapsed_time);
 }
 
 // Function to find the highest weighted uncolored node
@@ -138,6 +152,9 @@ int findNextNode(int **graph, int *colors, int vertices, bool *colored)
 // Enhanced DSatur algorithm
 int enhancedDSatur(int **graph, int *nodeWeights, int vertices)
 {
+    // Time measurement start
+    clock_t start_time = clock();
+
     int *colors = (int *)malloc(vertices * sizeof(int));
     bool *colored = (bool *)malloc(vertices * sizeof(bool));
 
@@ -205,5 +222,18 @@ int enhancedDSatur(int **graph, int *nodeWeights, int vertices)
     free(colors);
     free(colored);
 
+    // Time measurement end
+    clock_t end_time = clock();
+    double elapsed_time = ((double)(end_time - start_time)) / CLOCKS_PER_SEC * 1000; // Milisaniye cinsinden
+    totalTime += elapsed_time; // Toplam süreye ekle
+
+    printf("enhancedDSatur completed in: %.2f ms\n", elapsed_time);
+
     return maxColor + 1;
+}
+
+// Function to print the total execution time
+void printTotalTime()
+{
+    printf("Total execution time: %.2f ms\n", totalTime);
 }
