@@ -56,16 +56,22 @@ void run_benchmark(const char *filename)
     char output[1024];
     int dsatur = -1;
     int enhanced_dsatur = -1;
+    double dsatur_time = -1;
+    double enhanced_time = -1;
 
     while (fgets(output, sizeof(output), fp) != NULL)
     {
         sscanf(output, "DSatur: %d", &dsatur);
         sscanf(output, "Enhanced DSatur: %d", &enhanced_dsatur);
+        sscanf(output, "DSatur completed in: %lf ms", &dsatur_time);
+        sscanf(output, "enhancedDSatur completed in: %lf ms", &enhanced_time);
     }
 
     pclose(fp);
 
-    printf("%-40s %10d %20d\n", filename, dsatur, enhanced_dsatur);
+    // Çıktıyı güncelle
+    printf("%-40s %10d %20d %15.2f ms %15.2f ms\n", 
+           filename, dsatur, enhanced_dsatur, dsatur_time, enhanced_time);
 }
 
 void traverse_directory(const char *dir_path)
@@ -127,7 +133,8 @@ void traverse_directory(const char *dir_path)
 int main()
 {
     const char *dataset_dir = DATASET_DIR;
-    printf("%-40s %10s %20s\n", "Filename", "DSatur", "Enhanced DSatur");
+    printf("%-40s %10s %20s %18s %18s\n", 
+           "Filename", "DSatur", "Enhanced DSatur", "DSatur Time", "Enhanced Time");
     traverse_directory(dataset_dir);
     return 0;
 }
