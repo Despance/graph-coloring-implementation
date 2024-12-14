@@ -1,3 +1,6 @@
+// COMPILE THIS USING THE FOLLOWING COMMAND
+// gcc -O3 graph_constructor.c enhanced_dsatur.c dsatur.c main.c 
+
 #include <stdio.h>
 #include <stdlib.h>
 #include "graph_constructor.h"
