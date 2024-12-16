@@ -7,7 +7,7 @@
 double totalTime = 0.0;
 
 // Function to convert the graph to a weighted graph
-void convertToWeightedGraph(int **graph, int vertices)
+void convertToWeightedGraph(int **graph, int vertices, int n)
 {
     // Time measurement start
     clock_t start_time = clock();
@@ -22,50 +22,62 @@ void convertToWeightedGraph(int **graph, int vertices)
         tempEdgeWeights[i] = (int *)malloc(vertices * sizeof(int));
     }
 
-    // Step 1: Calculate node degree values
+    // Initialize node values
     for (int i = 0; i < vertices; i++)
     {
         nodeValues[i] = 0;
-        for (int j = 0; j < vertices; j++)
-        {
-            if (graph[i][j] > 0)
-            {
-                nodeValues[i]++;
-            }
-        }
     }
 
-    // Step 2: Calculate edge weights and update adjacency matrix
-    for (int i = 0; i < vertices; i++)
+    // Iteration loop
+    for (int iter = 0; iter < n; iter++)
     {
-        for (int j = 0; j < vertices; j++)
+        printf("Iteration %d:\n", iter + 1);
+
+        // Step 1: Calculate node degree values or update with current node weights
+        for (int i = 0; i < vertices; i++)
         {
-            if (graph[i][j] > 0) // Edge exists
+            nodeValues[i] = 0;
+            for (int j = 0; j < vertices; j++)
             {
-                tempEdgeWeights[i][j] = nodeValues[i] + nodeValues[j];
-                graph[i][j] = tempEdgeWeights[i][j]; // Update adjacency matrix with edge weight
+                if (graph[i][j] > 0)
+                {
+                    nodeValues[i] += graph[i][j]; // Sum of edge weights connected to the node
+                }
             }
         }
-    }
 
-    // Step 3: Calculate node weights
-    for (int i = 0; i < vertices; i++)
-    {
-        nodeWeights[i] = 0;
-        for (int j = 0; j < vertices; j++)
+        // Step 2: Calculate edge weights and update adjacency matrix
+        for (int i = 0; i < vertices; i++)
         {
-            if (graph[i][j] > 0) // Edge exists
+            for (int j = 0; j < vertices; j++)
             {
-                nodeWeights[i] += graph[i][j];
+                if (graph[i][j] > 0) // Edge exists
+                {
+                    tempEdgeWeights[i][j] = nodeValues[i] + nodeValues[j];
+                    graph[i][j] = tempEdgeWeights[i][j]; // Update adjacency matrix with edge weight
+                }
             }
         }
-    }
 
-    // Output the node weights
-    printf("Node Weights:\n");
-    for (int i = 0; i < vertices; i++)
-    {
-        printf("Node %d: %d\n", i + 1, nodeWeights[i]);
+        // Step 3: Calculate node weights
+        for (int i = 0; i < vertices; i++)
+        {
+            nodeWeights[i] = 0;
+            for (int j = 0; j < vertices; j++)
+            {
+                if (graph[i][j] > 0) // Edge exists
+                {
+                    nodeWeights[i] += graph[i][j];
+                }
+            }
+        }
+
+        // Output the node weights for this iteration
+        printf("Node Weights:\n");
+        for (int i = 0; i < vertices; i++)
+        {
+            printf("Node %d: %d\n", i + 1, nodeWeights[i]);
+        }
     }
 
     // Free dynamically allocated memory
@@ -80,7 +92,7 @@ void convertToWeightedGraph(int **graph, int vertices)
     // Time measurement end
     clock_t end_time = clock();
     double elapsed_time = ((double)(end_time - start_time)) / CLOCKS_PER_SEC * 1000; // Milisaniye cinsinden
-    totalTime += elapsed_time; // Toplam süreye ekle
+    totalTime += elapsed_time;                                                       // Toplam süreye ekle
 
     printf("convertToWeightedGraph completed in: %.2f ms\n", elapsed_time);
 }
@@ -225,7 +237,7 @@ int enhancedDSatur(int **graph, int *nodeWeights, int vertices)
     // Time measurement end
     clock_t end_time = clock();
     double elapsed_time = ((double)(end_time - start_time)) / CLOCKS_PER_SEC * 1000; // Milisaniye cinsinden
-    totalTime += elapsed_time; // Toplam süreye ekle
+    totalTime += elapsed_time;                                                       // Toplam süreye ekle
 
     printf("enhancedDSatur completed in: %.2f ms\n", elapsed_time);
 
