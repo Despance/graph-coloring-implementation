@@ -70,7 +70,7 @@ void run_benchmark(const char *filename)
     pclose(fp);
 
     // Çıktıyı güncelle
-    printf("%-40s %10d %20d %15.2f ms %15.2f ms\n", 
+    printf("%-40s %10d %20d %15.2f ms %15.2f ms\n",
            filename, dsatur, enhanced_dsatur, dsatur_time, enhanced_time);
 }
 
@@ -133,7 +133,7 @@ void traverse_directory(const char *dir_path)
 int main()
 {
     const char *dataset_dir = DATASET_DIR;
-    printf("%-40s %10s %20s %18s %18s\n", 
+    printf("%-40s %10s %20s %18s %18s\n",
            "Filename", "DSatur", "Enhanced DSatur", "DSatur Time", "Enhanced Time");
     traverse_directory(dataset_dir);
     return 0;

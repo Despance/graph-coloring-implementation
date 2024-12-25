@@ -32,7 +32,7 @@ int main(int argc, char *argv[])
         printf("DSatur: %d\n", minColor);
 
         int *nodeWeights = (int *)calloc(vertices, sizeof(int));
-        convertToWeightedGraph(graph, vertices, 2);
+        convertToWeightedGraph(graph, vertices, 1);
 
         // Calculate node weights from the graph
         for (int i = 0; i < vertices; i++)

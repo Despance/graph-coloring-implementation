@@ -143,14 +143,17 @@ int calculateSaturation(int **graph, int *colors, int node, int vertices)
 }
 
 // Function to find the next node to color
-int findNextNode(int **graph, int *colors, int vertices, bool *colored)
+int findNextNode(int **graph, int *colors, int vertices, bool *colored, int *nodeWeights)
 {
     int maxSaturation = -1, selectedNode = -1;
     for (int i = 0; i < vertices; i++)
     {
         if (!colored[i])
         {
-            int saturation = calculateSaturation(graph, colors, i, vertices);
+            // int saturation = calculateSaturation(graph, colors, i, vertices);
+            //  int saturation = nodeWeights[i] * calculateSaturation(graph, colors, i, vertices);
+            //  int saturation = nodeWeights[i] + calculateSaturation(graph, colors, i, vertices);
+            int saturation = nodeWeights[i];
             if (saturation > maxSaturation)
             {
                 maxSaturation = saturation;
@@ -184,8 +187,9 @@ int enhancedDSatur(int **graph, int *nodeWeights, int vertices)
     // Step 2: Color the rest of the nodes
     for (int step = 1; step < vertices; step++)
     {
+
         // Find the next node to color based on saturation degree
-        currentNode = findNextNode(graph, colors, vertices, colored);
+        currentNode = findNextNode(graph, colors, vertices, colored, nodeWeights);
 
         // Assign the smallest available color
         bool *usedColors = (bool *)malloc(vertices * sizeof(bool));
@@ -210,6 +214,7 @@ int enhancedDSatur(int **graph, int *nodeWeights, int vertices)
 
         colors[currentNode] = color; // Assign the color
         colored[currentNode] = true;
+        printf("Node %d colored with color %d with Weight: %d \n ", currentNode + 1, color, nodeWeights[currentNode]);
 
         free(usedColors);
     }
