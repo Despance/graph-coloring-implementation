@@ -24,7 +24,7 @@
 #define MAX_FILENAME_LENGTH 256
 #define MAX_COMMAND_LENGTH 512
 
-#define DATASET_DIR "dataset_INCEA"
+#define DATASET_DIR "datasets"
 
 const char *accepted_extensions[] = {".col", ".clq"};
 const int num_accepted_extensions = sizeof(accepted_extensions) / sizeof(accepted_extensions[0]);
