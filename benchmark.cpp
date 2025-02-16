@@ -18,7 +18,7 @@
 #include <dirent.h>
 #include <unistd.h>
 #define PATH_SEPARATOR "/"
-#define EXECUTABLE_NAME "./a.out"
+#define EXECUTABLE_NAME "./graphColoring.out"
 #endif
 
 #define MAX_FILENAME_LENGTH 256
