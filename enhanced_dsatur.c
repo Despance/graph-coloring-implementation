@@ -112,8 +112,7 @@ int findHighestWeightedNode(int *nodeWeights, bool *colored, int vertices)
     return selectedNode;
 }
 
-// Old enhancedDSatur (commented out), creates a new graph for each iteration
-/*
+
 int enhancedDSatur(int **graph, int *nodeWeights, int vertices)
 {
     // Time measurement start
@@ -228,12 +227,15 @@ int enhancedDSatur(int **graph, int *nodeWeights, int vertices)
     clock_t end_time = clock();
     double elapsed_time = ((double)(end_time - start_time)) / CLOCKS_PER_SEC * 1000; // Milisaniye cinsinden
     totalTime += elapsed_time;                                                       // Toplam süreye ekle
-
+    
     printf("enhancedDSatur completed in: %.2f ms\n", elapsed_time);
-
+    
     return maxColor + 1;
-}
-*/
+    }
+    
+   
+   /*
+   !!!Broken code, gives false results!!!
 
 static int *weightForSort; // For qsort comparator
 
@@ -418,6 +420,7 @@ int enhancedDSatur(int **graph, int *nodeWeights, int vertices)
 
     return maxColor + 1;
 }
+*/
 
 // Function to print the total execution time
 void printTotalTime()
