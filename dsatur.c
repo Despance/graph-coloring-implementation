@@ -1,7 +1,7 @@
 #include <stdio.h>
 #include <stdlib.h>
 #include <stdbool.h>
-#include <time.h> 
+#include <time.h>
 
 // Function to find the vertex with the maximum saturation degree
 int findMaxSaturationVertex(int vertices, int saturation[], bool colored[], int degree[], int **graph)
@@ -72,6 +72,7 @@ int dsatur(int **graph, int vertices)
 
         colors[vertex] = color; // Assign the color
         colored[vertex] = true;
+        printf("%d- Node %d: Color %d\n", i + 1, vertex + 1, color);
 
         free(usedColors); // Free the temporary array for used colors
 
@@ -106,10 +107,10 @@ int dsatur(int **graph, int vertices)
     }
 
     // Print the coloring result
-    printf("DSatur Coloring Result:\n");
+    printf("DSatur Final Colors:\n");
     for (int i = 0; i < vertices; i++)
     {
-        printf("Vertex %d: Color %d\n", i + 1, colors[i]);
+        printf("Node %d: Color %d\n", i + 1, colors[i]);
     }
 
     // Find the maximum color used
