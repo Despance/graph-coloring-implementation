@@ -46,7 +46,7 @@ int main(int argc, char *argv[])
                 }
             }
         }
-
+        printf("Running Enhanced DSatur algorithm...\n");
         int minColorEnhanced = enhancedDSatur(graph, nodeWeights, vertices);
         printf("Enhanced DSatur algorithm completed. \n");
         printf("Enhanced DSatur: %d\n", minColorEnhanced);
