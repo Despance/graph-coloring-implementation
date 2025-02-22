@@ -212,6 +212,93 @@ int enhancedDSatur(int **graph, int *nodeWeights, int vertices)
     return maxColor + 1;
 }
 
+// This method is for verifying the coloring solution that returns the color assignment array.
+int *enhancedDSaturSolution(int **graph, int *nodeWeights, int vertices)
+{
+    clock_t start_time = clock();
+
+    int *colors = (int *)malloc(vertices * sizeof(int));
+    bool *colored = (bool *)malloc(vertices * sizeof(bool));
+
+    for (int i = 0; i < vertices; i++)
+    {
+        colors[i] = -1;
+        colored[i] = false;
+    }
+    int maxUsedColor = 0;
+
+    for (int step = 0; step < vertices; step++)
+    {
+        int **newGraph = (int **)malloc(vertices * sizeof(int *));
+        for (int i = 0; i < vertices; i++)
+        {
+            newGraph[i] = (int *)malloc(vertices * sizeof(int));
+            for (int j = 0; j < vertices; j++)
+                newGraph[i][j] = colored[i] ? 0 : (colored[j] ? 0 : graph[i][j]);
+        }
+        convertToWeightedGraph(newGraph, vertices, 1);
+        int *newWeights = (int *)malloc(vertices * sizeof(int));
+        for (int i = 0; i < vertices; i++)
+        {
+            newWeights[i] = 0;
+            for (int j = 0; j < vertices; j++)
+            {
+                if (newGraph[i][j] > 0)
+                    newWeights[i] += newGraph[i][j];
+            }
+        }
+        int currentNode = -1, maxWeight = -1;
+        for (int i = 0; i < vertices; i++)
+        {
+            if (!colored[i] && newWeights[i] > maxWeight)
+            {
+                maxWeight = newWeights[i];
+                currentNode = i;
+            }
+        }
+        bool *usedColors = (bool *)calloc(maxUsedColor + 1, sizeof(bool));
+        for (int i = 0; i < vertices; i++)
+        {
+            if (graph[currentNode][i] > 0 && colors[i] != -1)
+            {
+                if (colors[i] <= maxUsedColor)
+                    usedColors[colors[i]] = true;
+            }
+        }
+        int color = 0;
+        while (color <= maxUsedColor && usedColors[color])
+            color++;
+        if (color > maxUsedColor)
+            maxUsedColor = color;
+        colors[currentNode] = color;
+        colored[currentNode] = true;
+        printf("%d- Node %d: Color %d\n", step + 1, currentNode + 1, color);
+        free(usedColors);
+        for (int i = 0; i < vertices; i++)
+            free(newGraph[i]);
+        free(newGraph);
+        free(newWeights);
+    }
+
+    printf("Enhanced Final Colors:\n");
+    for (int i = 0; i < vertices; i++)
+        printf("Node %d: Color %d\n", i + 1, colors[i]);
+
+    int maxColor = 0;
+    for (int i = 0; i < vertices; i++)
+    {
+        if (colors[i] > maxColor)
+            maxColor = colors[i];
+    }
+
+    clock_t end_time = clock();
+    double elapsed_time = ((double)(end_time - start_time)) / CLOCKS_PER_SEC * 1000;
+    printf("enhancedDSatur completed in: %.2f ms\n", elapsed_time);
+
+    free(colored);
+    return colors; // return the allocated colors array
+}
+
 // Function to print the total execution time
 void printTotalTime()
 {

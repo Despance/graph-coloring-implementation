@@ -5,4 +5,6 @@
 #include "graph_constructor.h"
 
 int dsatur(int **graph, int vertices);
+int *dsaturSolution(int **graph, int vertices);
+
 #endif
