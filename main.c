@@ -7,6 +7,7 @@
 #include "dsatur.h"
 #include "enhanced_dsatur.h"
 
+
 int main(int argc, char *argv[])
 {
     if (argc < 2)
@@ -32,8 +33,10 @@ int main(int argc, char *argv[])
         printf("DSatur: %d\n", minColor);
 
         int *nodeWeights = (int *)calloc(vertices, sizeof(int));
+        /*
+        OLD CODE
         convertToWeightedGraph(graph, vertices, 1);
-
+        
         // Calculate node weights from the graph
         for (int i = 0; i < vertices; i++)
         {
@@ -46,8 +49,10 @@ int main(int argc, char *argv[])
                 }
             }
         }
-
+        
         int minColorEnhanced = enhancedDSatur(graph, nodeWeights, vertices);
+        */
+        int minColorEnhanced = newGraphColoring(graph, nodeWeights, vertices, 1); // NEW CODE
         printf("Enhanced DSatur algorithm completed. \n");
         printf("Enhanced DSatur: %d\n", minColorEnhanced);
 
