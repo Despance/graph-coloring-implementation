@@ -109,7 +109,7 @@ int get_optimal_solution(const char *filepath)
         "datasets/optimals/NP-s.csv",
         "datasets/optimals/NP-m.csv",
         "datasets/optimals/NP-h.csv",
-        "datasets/optimals/NP-?.csv"};
+        "datasets/optimals/NP-unknown.csv"};
     int num_csv = sizeof(csv_files) / sizeof(csv_files[0]);
 
     char line[1024];
