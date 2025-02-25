@@ -6,6 +6,7 @@
 #include "graph_constructor.h"
 #include "dsatur.h"
 #include "enhanced_dsatur.h"
+#include "save_weighted.h"
 
 int main(int argc, char *argv[])
 {
@@ -22,17 +23,20 @@ int main(int argc, char *argv[])
     int result = constructGraphFromFile(filename, &graph, &vertices);
     if (result == 0)
     {
-        printf("Graph constructed with %d vertices.\n", vertices);
+        /*printf("Graph constructed with %d vertices.\n", vertices);
 
         printf("Running DSatur algorithm...\n");
 
         int minColor = dsatur(graph, vertices);
 
         printf("DSatur algorithm completed. \n");
-        printf("DSatur: %d\n", minColor);
+        printf("DSatur: %d\n", minColor);*/
 
         int *nodeWeights = (int *)calloc(vertices, sizeof(int));
         convertToWeightedGraph(graph, vertices, 1);
+        
+        // Save the weighted graph to a file
+        saveWeightedGraph(filename, graph, vertices);
 
         // Calculate node weights from the graph
         for (int i = 0; i < vertices; i++)
@@ -47,11 +51,11 @@ int main(int argc, char *argv[])
             }
         }
 
-        int minColorEnhanced = enhancedDSatur(graph, nodeWeights, vertices);
+        /*int minColorEnhanced = enhancedDSatur(graph, nodeWeights, vertices);
         printf("Enhanced DSatur algorithm completed. \n");
         printf("Enhanced DSatur: %d\n", minColorEnhanced);
 
-        printf("minColor = %d   enhanced = %d \n", minColor, minColorEnhanced);
+        printf("minColor = %d   enhanced = %d \n", minColor, minColorEnhanced);*/
 
         free(nodeWeights);
         for (int i = 0; i < vertices; i++)
