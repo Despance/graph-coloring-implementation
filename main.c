@@ -8,7 +8,8 @@
 #include <sys/types.h>
 #include "graph_constructor.h"
 #include "dsatur.h"          // now provides dsaturSolution()
-#include "enhanced_dsatur.h" // now provides enhancedDSaturSolution()
+//#include "enhanced_dsatur.h" // now provides enhancedDSaturSolution()
+#include "imp_color.h"       // now provides calculateImpColor(), getSolution(), getOrderOfNodes()
 
 // It automatically uses the instance file and the enhanced solution file.
 void runVerifier(const char *instFile)
@@ -57,7 +58,7 @@ void writeSolutionToFile(const char *baseFilename, const char *algoType, int *co
     for (int i = 0; i < vertices; i++)
     {
         // Write color starting from 1, followed by a newline.
-        fprintf(solFile, "%d\n", colors[i] + 1);
+        fprintf(solFile, "%d\n", colors[i]);
     }
     fclose(solFile);
     printf("Solution written to %s\n", solFilename);
@@ -89,23 +90,11 @@ int main(int argc, char *argv[])
         free(dsaturColors);
 
         int *nodeWeights = (int *)calloc(vertices, sizeof(int));
-        convertToWeightedGraph(graph, vertices, 1);
-
-        // Calculate node weights from the graph
-        for (int i = 0; i < vertices; i++)
-        {
-            nodeWeights[i] = 0;
-            for (int j = 0; j < vertices; j++)
-            {
-                if (graph[i][j] > 0)
-                {
-                    nodeWeights[i] += graph[i][j];
-                }
-            }
-        }
-        printf("Running Enhanced DSatur algorithm...\n");
-        int *enhancedColors = enhancedDSaturSolution(graph, nodeWeights, vertices);
-        printf("Enhanced DSatur algorithm completed.\n");
+        
+        printf("Running Importance Coloring algorithm...\n");
+        calculateImpColor(graph, nodeWeights, vertices, 1);
+        int *enhancedColors = getSolution();
+        printf("Importance Coloring algorithm completed.\n");
 
         writeSolutionToFile(filename, "enhanced", enhancedColors, vertices);
 
