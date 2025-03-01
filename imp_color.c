@@ -1,0 +1,252 @@
+#include <stdbool.h>
+#include <stdio.h>
+#include <stdlib.h>
+#include <time.h>
+
+// Function prototypes
+void updateNodeWeights(int **graph, int *nodeWeights, int nodes, int n);
+void calculateImpColor(int **graph, int *nodeWeights, int nodes, int n);
+void colorGraphImpRecalculate(int **graph, int *nodeWeights, int nodes, int n);
+int colorGraphImpMixDSatur(int **graph, int *nodeWeights, int nodes);
+void updateNeighboursWeights(int **graph, int *nodeWeights, int nodes, int currentNode);
+void colorNodeFirstFit(int **graph, int *colors, bool *colored, int nodes, int currentNode);
+int findHighestWeightedNode(int *nodeWeights, bool *colored, int vertices); 
+void removeNode(int **graph, int nodes, int node);
+void resetNodeWeights(int **graph, int *nodeWeights, int nodes);
+
+
+// Global variables
+
+int *solution; // Solution array
+
+int *orderOfNodes; // Order of nodes array
+
+
+void updateNodeWeights(int **graph, int *nodeWeights ,int nodes, int n){
+
+    int *nodeValues = (int *)calloc(nodes, sizeof(int));          // Node degree values (init with 0)
+    int **tempEdgeWeights = (int **)malloc(nodes * sizeof(int *)); // Temporary edge weights
+
+    // Allocate memory for tempEdgeWeights
+    for (int i = 0; i < nodes; i++){
+        tempEdgeWeights[i] = (int *)malloc(nodes * sizeof(int));
+    }
+
+    
+    // Iteration loop
+    for (int iter = 0; iter < n; iter++){
+
+        // Step 1: Calculate node degree values or update with current node weights
+        for (int i = 0; i < nodes; i++)
+        {
+            nodeValues[i] = 0;
+            for (int j = 0; j < nodes; j++)
+            {
+                if (graph[i][j] > 0) // TODO: we may not need this check(if we don't have overflows etc.)
+                {
+                    nodeValues[i] += graph[i][j]; // Sum of edge weights connected to the node
+                }
+            }
+        }
+
+        // Step 2: Calculate edge weights and update adjacency matrix
+        for (int i = 0; i < nodes; i++)
+        {
+            for (int j = 0; j < nodes; j++)
+            {
+                if (graph[i][j] > 0) // Edge exists
+                {
+                    tempEdgeWeights[i][j] = nodeValues[i] + nodeValues[j]; // Calculate edge weight
+                    graph[i][j] = tempEdgeWeights[i][j]; // Update adjacency matrix with edge weight
+                }
+            }
+        }
+
+        // Step 3: Calculate node weights
+        for (int i = 0; i < nodes; i++)
+        {
+            nodeWeights[i] = 0;
+            for (int j = 0; j < nodes; j++)
+            {
+                if (graph[i][j] > 0) // Edge exists (TODO: we may not need this check)
+                {
+                    nodeWeights[i] += graph[i][j];
+                }
+            }
+        }
+    }
+
+    // Free dynamically allocated memory
+    free(nodeValues);
+    for (int i = 0; i < nodes; i++)
+    {
+        free(tempEdgeWeights[i]);
+    }
+    free(tempEdgeWeights);
+}
+
+
+
+// method to color the graph using First Fit and 2x the weights of the neighbours
+void calculateImpColor(int **graph, int *nodeWeights, int nodes, int n){
+    
+    // updateNodeWeights(graph, nodeWeights, nodes, n); // Update node weights
+    
+    //colorGraphImpMixDSatur(graph, nodeWeights, nodes); // Color the graph using First Fit and 2x the weights of the neighbours
+
+    colorGraphImpRecalculate(graph, nodeWeights, nodes, n); // Color the graph by First Fit, removal of colored nodes and recalculation of the node weights
+}
+
+
+// Coloring by removal of colored nodes and recalculation of the node weights
+void colorGraphImpRecalculate(int **graph, int *nodeWeights, int nodes, int n){ // TODO: find better names for these functions... :'(
+    solution = (int *)calloc(nodes, sizeof(int)); // Solution array, 0 is no color assigned
+    orderOfNodes = (int *)malloc(nodes * sizeof(int));
+    bool *colored = (bool *)calloc(nodes, sizeof(bool));
+    int **tempGraph = (int**)malloc(nodes*sizeof(int *)); // Temporary graph
+    int numOfColors = -1;
+
+    // Allocate memory for tempGraph
+    for (int i = 0; i < nodes; i++){
+        tempGraph[i] = (int *)malloc(nodes * sizeof(int));
+    }
+    // copy graph to temp graph
+    for(int i = 0; i<nodes; i++){
+        for(int j = 0; j<nodes; j++){
+            tempGraph[i][j] = graph[i][j];
+        }
+    }
+
+    for (int i = 0; i < nodes; i++){
+        updateNodeWeights(tempGraph, nodeWeights, nodes, n); // Update the node weights
+        int currentNode = findHighestWeightedNode(nodeWeights, colored, nodes);
+        orderOfNodes[i] = currentNode;
+        colorNodeFirstFit(graph, solution, colored, nodes, currentNode); // First Fit Coloring the highest weighted node
+        removeNode(tempGraph, nodes, currentNode); // Remove the colored node
+        resetNodeWeights(tempGraph, nodeWeights, nodes); // Reset the node weights
+    }
+
+    // free memory for tempGraph
+    for (int i = 0; i < nodes; i++){
+        free(tempGraph[i]);
+    }
+    free(tempGraph);
+    free(colored);
+}
+
+// function to remove a node from the graph by setting the according adjacency matrix values to 0
+void removeNode(int **graph, int nodes, int node){
+    for (int i = 0; i < nodes; i++){
+        graph[node][i] = 0;
+        graph[i][node] = 0;
+    }
+}
+
+// function to reset the node weights
+void resetNodeWeights(int **graph, int *nodeWeights, int nodes){
+    for (int i = 0; i < nodes; i++){
+        nodeWeights[i] = 0;
+        for (int j = 0; j < nodes; j++){
+            if (graph[i][j] > 0){
+                graph[i][j] = 1;
+            }
+        }
+    }
+
+}
+
+// PROBABLY BROKEN, DON'T USE
+// Coloring using First Fit and 2x the weights of the neighbours
+int colorGraphImpMixDSatur(int **graph, int *nodeWeights, int nodes){ // TODO: find better names for these functions... :'(
+    // Start DSatur like coloring process
+    int *colors = (int *)malloc(nodes * sizeof(int));
+    bool *colored = (bool *)malloc(nodes * sizeof(bool));
+    int numOfColors = -1;
+
+    for (int i = 0; i < nodes; i++)
+    {
+        colors[i] = -1; // No color assigned initially
+        colored[i] = false;
+    }
+
+    // Coloring process, First Fit and 2x the weights of the neighbours
+    for(int i = 0; i< nodes;i++){
+        int currentNode = findHighestWeightedNode(nodeWeights, colored, nodes);
+        colorNodeFirstFit(graph, colors, colored, nodes, currentNode); // First Fit Coloring the highest weighted node
+        updateNeighboursWeights(graph, nodeWeights, nodes, currentNode); // Update the weights of the neighbours(2x them)
+    }
+    
+    for(int i = 0; i < nodes; i++){
+        if(colored[i]){
+            if(colors[i] > numOfColors){
+                numOfColors = colors[i];
+            }
+        }
+    }
+    return numOfColors + 1;
+}
+
+
+// method to 2x the weights of the current node's neighbours
+void updateNeighboursWeights(int **graph, int *nodeWeights, int nodes, int currentNode){
+    for (int i = 0; i < nodes; i++){
+        if (graph[currentNode][i] > 0){ // Check adjacency
+            nodeWeights[i] += nodeWeights[i]; // Double the weight
+        }
+    }
+}
+
+
+// First Fit Colores the current node
+void colorNodeFirstFit(int **graph, int *colors, bool *colored, int nodes, int currentNode){
+    bool *usedColors = (bool *)calloc(nodes, sizeof(bool));
+
+    for (int i = 0; i < nodes; i++){
+        if (graph[currentNode][i] > 0 && colored[i]) // Check adjacency and color status
+        {   
+            usedColors[colors[i]-1] = true; // Mark the color as used(-1 for indexing reasons, color 1 is at index 0)
+        }
+    }
+    
+    int color = 0;
+    while (color <= nodes && usedColors[color]){ // Find the first available color
+        color++;
+    }
+
+    colors[currentNode] = color + 1; // Assign the color(+1 because 0 is no color assigned)
+    colored[currentNode] = true;
+    free(usedColors);
+
+}
+
+
+// Function to find the highest weighted uncolored node
+int findHighestWeightedNode(int *nodeWeights, bool *colored, int nodes){
+    int maxWeight = -1, selectedNode = -1;
+    for (int i = 0; i < nodes; i++){
+
+        if (!colored[i] && nodeWeights[i] > maxWeight){
+            maxWeight = nodeWeights[i];
+            selectedNode = i;
+        }
+    }
+    return selectedNode;
+}
+
+
+// Getters for the solution and order of nodes
+
+// Get the solution array, which contains the color assignments
+// 0 means no color assigned
+// 1,2,3,... are the colors
+// The index of the array is the node number
+int *getSolution(){
+    return solution;
+}
+
+// Get the order of nodes array
+// The index of the array is the order of the node
+// The value of the array is the node number
+int *getOrderOfNodes(){
+    return orderOfNodes;
+}
