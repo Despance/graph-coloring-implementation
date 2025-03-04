@@ -5,26 +5,16 @@
 #include <stdio.h>
 #include <stdlib.h>
 #include <string.h>
-#include <ctype.h> // Add this include near other includes
-
-#ifdef _WIN32
-#include <windows.h>
-#include <tchar.h>
-#include <direct.h>
-#define PATH_SEPARATOR "\\"
-#define EXECUTABLE_NAME "a.exe"
-#define popen _popen
-#define pclose _pclose
-#else
+#include <ctype.h>
 #include <dirent.h>
 #include <unistd.h>
+#include <time.h>
+
 #define PATH_SEPARATOR "/"
 #define EXECUTABLE_NAME "./graphColoring.out"
-#endif
 
 #define MAX_FILENAME_LENGTH 256
 #define MAX_COMMAND_LENGTH 512
-
 #define DATASET_DIR "datasets"
 
 const char *accepted_extensions[] = {".col", ".clq"};
@@ -42,7 +32,15 @@ int has_accepted_extension(const char *filename)
     return 0;
 }
 
-// New helper: trim leading and trailing whitespace in-place
+void generate_unique_filename(char *filename, size_t size)
+{
+    time_t now = time(NULL);
+    struct tm *t = localtime(&now);
+    snprintf(filename, size, "./benchmark_result/%02d%02d%04d_%02d%02d.txt",
+             t->tm_mday, t->tm_mon + 1, t->tm_year + 1900,
+             t->tm_hour, t->tm_min);
+}
+
 void trim(char *str)
 {
     char *start = str;
@@ -58,7 +56,6 @@ void trim(char *str)
     }
 }
 
-// New helper: simple CSV parser that handles quoted fields
 int parse_csv_line(const char *line, char tokens[][128], int max_tokens)
 {
     int token_index = 0, i = 0, j = 0;
@@ -85,69 +82,7 @@ int parse_csv_line(const char *line, char tokens[][128], int max_tokens)
     return token_index + 1;
 }
 
-// Updated helper to retrieve optimal solution from the provided CSV files
-int get_optimal_solution(const char *filepath)
-{
-    // Extract base filename (without extension)
-    char base[MAX_FILENAME_LENGTH];
-    const char *slash = strrchr(filepath, '/');
-#ifdef _WIN32
-    if (!slash)
-        slash = strrchr(filepath, '\\');
-#endif
-    if (slash)
-        strcpy(base, slash + 1);
-    else
-        strcpy(base, filepath);
-    char *dot = strrchr(base, '.');
-    if (dot)
-        *dot = '\0';
-    trim(base); // Trim extra spaces from the base
-
-    // Array of CSV file paths
-    const char *csv_files[] = {
-        "datasets/optimals/NP-s.csv",
-        "datasets/optimals/NP-m.csv",
-        "datasets/optimals/NP-h.csv",
-        "datasets/optimals/NP-unknown.csv"};
-    int num_csv = sizeof(csv_files) / sizeof(csv_files[0]);
-
-    char line[1024];
-    char tokens[20][128];
-    for (int i = 0; i < num_csv; i++)
-    {
-        FILE *fp = fopen(csv_files[i], "r");
-        if (!fp)
-        {
-            perror(csv_files[i]);
-            continue;
-        }
-        // Skip header line
-        if (fgets(line, sizeof(line), fp) == NULL)
-        {
-            fclose(fp);
-            continue;
-        }
-        while (fgets(line, sizeof(line), fp))
-        {
-            int count = parse_csv_line(line, tokens, 20);
-            if (count < 10)
-                continue;    // Need at least 10 tokens
-            trim(tokens[0]); // Trim instance name from CSV
-            // Compare the instance name with the base filename
-            if (strcmp(tokens[0], base) == 0)
-            {
-                int optimal = atoi(tokens[9]);
-                fclose(fp);
-                return optimal;
-            }
-        }
-        fclose(fp);
-    }
-    return -1;
-}
-
-void run_benchmark(const char *filename)
+void run_benchmark(const char *filename, FILE *output_fp)
 {
     char command[MAX_COMMAND_LENGTH];
     snprintf(command, sizeof(command), "%s %s", EXECUTABLE_NAME, filename);
@@ -174,70 +109,12 @@ void run_benchmark(const char *filename)
     }
 
     pclose(fp);
-
-    int optimal = get_optimal_solution(filename);
-
-    // Determine ANSI color for Enhanced DSatur column:
-    char color[10] = "";
-    if (enhanced_dsatur == optimal)
-        strcpy(color, "\033[32m"); // green
-    else if (enhanced_dsatur < dsatur)
-        strcpy(color, "\033[33m"); // yellow
-    else if (enhanced_dsatur > dsatur)
-        strcpy(color, "\033[31m"); // red
-    else
-        strcpy(color, "\033[0m"); // reset
-
-    char colored_enhanced[128];
-    snprintf(colored_enhanced, sizeof(colored_enhanced), "%s%20d\033[0m", color, enhanced_dsatur);
-
-    // Updated output: color only the Enhanced DSatur column
-    printf("%-45s %10d %20s %10d %15.2f ms %15.2f ms\n",
-           filename, dsatur, colored_enhanced, optimal, dsatur_time, enhanced_time);
+    fprintf(output_fp, "%-45s %10d %20d %15.2f ms %15.2f ms\n",
+            filename, dsatur, enhanced_dsatur, dsatur_time, enhanced_time);
 }
 
-void traverse_directory(const char *dir_path)
+void traverse_directory(const char *dir_path, FILE *output_fp)
 {
-#ifdef _WIN32
-    WIN32_FIND_DATA find_file_data;
-    HANDLE h_find = INVALID_HANDLE_VALUE;
-
-    char search_path[MAX_FILENAME_LENGTH];
-    snprintf(search_path, sizeof(search_path), "%s\\*", dir_path);
-
-    h_find = FindFirstFile(search_path, &find_file_data);
-
-    if (h_find == INVALID_HANDLE_VALUE)
-    {
-        fprintf(stderr, "Error opening directory: %s\n", dir_path);
-        return;
-    }
-
-    do
-    {
-        if (find_file_data.dwFileAttributes & FILE_ATTRIBUTE_DIRECTORY)
-        {
-            // Check for "." and ".."
-            if (strcmp(find_file_data.cFileName, ".") != 0 && strcmp(find_file_data.cFileName, "..") != 0)
-            {
-                char subdir[MAX_FILENAME_LENGTH];
-                snprintf(subdir, sizeof(subdir), "%s\\%s", dir_path, find_file_data.cFileName);
-                traverse_directory(subdir);
-            }
-        }
-        else
-        {
-            if (has_accepted_extension(find_file_data.cFileName))
-            {
-                char filepath[MAX_FILENAME_LENGTH];
-                snprintf(filepath, sizeof(filepath), "%s\\%s", dir_path, find_file_data.cFileName);
-                run_benchmark(filepath);
-            }
-        }
-    } while (FindNextFile(h_find, &find_file_data) != 0);
-
-    FindClose(h_find);
-#else
     DIR *d;
     struct dirent *dir;
     d = opendir(dir_path);
@@ -246,26 +123,19 @@ void traverse_directory(const char *dir_path)
     {
         while ((dir = readdir(d)) != NULL)
         {
-            // Skip special directories
             if (strcmp(dir->d_name, ".") == 0 || strcmp(dir->d_name, "..") == 0)
                 continue;
 
             char path[MAX_FILENAME_LENGTH];
             snprintf(path, sizeof(path), "%s/%s", dir_path, dir->d_name);
 
-// If directory, recursively traverse, else check file extension
-#ifdef DT_DIR
             if (dir->d_type == DT_DIR)
             {
-                traverse_directory(path);
+                traverse_directory(path, output_fp);
             }
-            else
-#endif
+            else if (has_accepted_extension(dir->d_name))
             {
-                if (has_accepted_extension(dir->d_name))
-                {
-                    run_benchmark(path);
-                }
+                run_benchmark(path, output_fp);
             }
         }
         closedir(d);
@@ -274,16 +144,25 @@ void traverse_directory(const char *dir_path)
     {
         perror("opendir");
     }
-#endif
 }
 
 int main(int argc, char *argv[])
 {
+    char output_filename[64];
+    generate_unique_filename(output_filename, sizeof(output_filename));
+    
+    FILE *output_fp = fopen(output_filename, "w");
+    if (!output_fp)
+    {
+        perror("fopen");
+        exit(EXIT_FAILURE);
+    }
+
     const char *dataset_dir = (argc > 1) ? argv[1] : DATASET_DIR;
-    // Updated header: Optimal column is now 4th
-    printf("%-45s %10s %20s %10s %18s %18s\n",
-           "Filename", "DSatur", "Enhanced DSatur", "Optimal", "DSatur Time", "Enhanced Time");
-    traverse_directory(dataset_dir);
-    printf("Benchmark completed.\n");
+    fprintf(output_fp, "%-45s %10s %20s %18s %18s\n",
+            "Filename", "DSatur", "Enhanced DSatur", "DSatur Time", "Enhanced Time");
+    traverse_directory(dataset_dir, output_fp);
+    fprintf(output_fp, "Benchmark completed.\n");
+    fclose(output_fp);
     return 0;
 }
