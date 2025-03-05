@@ -2,17 +2,18 @@
 #include <stdio.h>
 #include <stdlib.h>
 #include <time.h>
+#include <string.h>
 
 // Function prototypes
 void updateNodeWeights(int **graph, int *nodeWeights, int nodes, int n);
 void calculateImpColor(int **graph, int *nodeWeights, int nodes, int n);
 void colorGraphImpRecalculate(int **graph, int *nodeWeights, int nodes, int n);
-int colorGraphImpMixDSatur(int **graph, int *nodeWeights, int nodes);
-void updateNeighboursWeights(int **graph, int *nodeWeights, int nodes, int currentNode);
+void colorGraphImpMixDSatur(int **graph, int *nodeWeights, int nodes);
+void updateNeighboursWeights(int **graph, int *nodeWeights, int nodes, int currentNode, int n);
 void colorNodeFirstFit(int **graph, int *colors, bool *colored, int nodes, int currentNode);
 int findHighestWeightedNode(int *nodeWeights, bool *colored, int vertices); 
 void removeNode(int **graph, int nodes, int node);
-void resetNodeWeights(int **graph, int *nodeWeights, int nodes);
+void resetWeights(int **graph, int *nodeWeights, int nodes);
 
 
 // Global variables
@@ -90,9 +91,10 @@ void updateNodeWeights(int **graph, int *nodeWeights ,int nodes, int n){
 // method to color the graph using First Fit and 2x the weights of the neighbours
 void calculateImpColor(int **graph, int *nodeWeights, int nodes, int n){
     
-    // updateNodeWeights(graph, nodeWeights, nodes, n); // Update node weights
-    
-    //colorGraphImpMixDSatur(graph, nodeWeights, nodes); // Color the graph using First Fit and 2x the weights of the neighbours
+    /*
+    updateNodeWeights(graph, nodeWeights, nodes, n); // Update node weights
+    colorGraphImpMixDSatur(graph, nodeWeights, nodes); // Color the graph using First Fit and 2x the weights of the neighbours
+    */
 
     colorGraphImpRecalculate(graph, nodeWeights, nodes, n); // Color the graph by First Fit, removal of colored nodes and recalculation of the node weights
 }
@@ -110,12 +112,12 @@ void colorGraphImpRecalculate(int **graph, int *nodeWeights, int nodes, int n){ 
     for (int i = 0; i < nodes; i++){
         tempGraph[i] = (int *)malloc(nodes * sizeof(int));
     }
+
     // copy graph to temp graph
     for(int i = 0; i<nodes; i++){
-        for(int j = 0; j<nodes; j++){
-            tempGraph[i][j] = graph[i][j];
-        }
+        memcpy(tempGraph[i], graph[i], nodes*sizeof(int));        
     }
+    
 
     for (int i = 0; i < nodes; i++){
         updateNodeWeights(tempGraph, nodeWeights, nodes, n); // Update the node weights
@@ -123,7 +125,7 @@ void colorGraphImpRecalculate(int **graph, int *nodeWeights, int nodes, int n){ 
         orderOfNodes[i] = currentNode;
         colorNodeFirstFit(graph, solution, colored, nodes, currentNode); // First Fit Coloring the highest weighted node
         removeNode(tempGraph, nodes, currentNode); // Remove the colored node
-        resetNodeWeights(tempGraph, nodeWeights, nodes); // Reset the node weights
+        resetWeights(tempGraph, nodeWeights, nodes); // Reset the node weights
     }
 
     // free memory for tempGraph
@@ -142,56 +144,54 @@ void removeNode(int **graph, int nodes, int node){
     }
 }
 
-// function to reset the node weights
-void resetNodeWeights(int **graph, int *nodeWeights, int nodes){
+// function to reset the node and edge weights
+void resetWeights(int **graph, int *nodeWeights, int nodes){
+    // Reset the node weights
+    memset(nodeWeights, 0, nodes*sizeof(int)); 
+    // reset the edge weights
     for (int i = 0; i < nodes; i++){
-        nodeWeights[i] = 0;
         for (int j = 0; j < nodes; j++){
             if (graph[i][j] > 0){
                 graph[i][j] = 1;
             }
         }
     }
-
 }
 
-// PROBABLY BROKEN, DON'T USE
+// SEEMS TO BE WORKING BUT WORSE THAN RECALCULATE
+// ADVISE: USE RECALCULATE INSTEAD
 // Coloring using First Fit and 2x the weights of the neighbours
-int colorGraphImpMixDSatur(int **graph, int *nodeWeights, int nodes){ // TODO: find better names for these functions... :'(
+void colorGraphImpMixDSatur(int **graph, int *nodeWeights, int nodes){ // TODO: find better names for these functions... :'(
     // Start DSatur like coloring process
-    int *colors = (int *)malloc(nodes * sizeof(int));
+    solution = (int *)calloc(nodes, sizeof(int)); // Solution array, 0 is no color assigned
+    orderOfNodes = (int *)malloc(nodes * sizeof(int));
     bool *colored = (bool *)malloc(nodes * sizeof(bool));
-    int numOfColors = -1;
 
-    for (int i = 0; i < nodes; i++)
-    {
-        colors[i] = -1; // No color assigned initially
+    for (int i = 0; i < nodes; i++){
+        solution[i] = -1; // No color assigned initially
         colored[i] = false;
     }
 
     // Coloring process, First Fit and 2x the weights of the neighbours
     for(int i = 0; i< nodes;i++){
         int currentNode = findHighestWeightedNode(nodeWeights, colored, nodes);
-        colorNodeFirstFit(graph, colors, colored, nodes, currentNode); // First Fit Coloring the highest weighted node
-        updateNeighboursWeights(graph, nodeWeights, nodes, currentNode); // Update the weights of the neighbours(2x them)
+        orderOfNodes[i] = currentNode;
+        colorNodeFirstFit(graph, solution, colored, nodes, currentNode); // First Fit Coloring the highest weighted node
+        updateNeighboursWeights(graph, nodeWeights, nodes, currentNode, 2); // Update the weights of the neighbours(2x them)
     }
+
+    free(colored);
     
-    for(int i = 0; i < nodes; i++){
-        if(colored[i]){
-            if(colors[i] > numOfColors){
-                numOfColors = colors[i];
-            }
-        }
-    }
-    return numOfColors + 1;
+    
+    return;
 }
 
 
-// method to 2x the weights of the current node's neighbours
-void updateNeighboursWeights(int **graph, int *nodeWeights, int nodes, int currentNode){
+// method to n times the weights of the current node's neighbours
+void updateNeighboursWeights(int **graph, int *nodeWeights, int nodes, int currentNode, int n){
     for (int i = 0; i < nodes; i++){
         if (graph[currentNode][i] > 0){ // Check adjacency
-            nodeWeights[i] += nodeWeights[i]; // Double the weight
+            nodeWeights[i] = n*nodeWeights[i]; // n times the weight
         }
     }
 }
