@@ -85,6 +85,30 @@ int parse_csv_line(const char *line, char tokens[][128], int max_tokens)
     return token_index + 1;
 }
 
+int getMaxColorFromFile(const char *solutionName, const char *type)
+{
+    char filepath[MAX_FILENAME_LENGTH];
+    snprintf(filepath, sizeof(filepath), "solutions/%s/sol_%s_%s.txt", solutionName, solutionName, type);
+
+    FILE *file = fopen(filepath, "r");
+    if (file == NULL)
+    {
+        // fprintf(stderr, "File not found: %s\n", filepath);
+        return -1;
+    }
+
+    int maxColor = -1;
+
+    char line[128];
+    while (fgets(line, sizeof(line), file))
+    {
+        int color = atoi(line);
+        if (color > maxColor)
+            maxColor = color;
+    }
+    return maxColor;
+}
+
 // Updated helper to retrieve optimal solution from the provided CSV files
 int get_optimal_solution(const char *filepath)
 {
@@ -147,6 +171,11 @@ int get_optimal_solution(const char *filepath)
     return -1;
 }
 
+int optimals = 0;
+int betters = 0;
+int worsens = 0;
+int equals = 0;
+
 void run_benchmark(const char *filename)
 {
     char command[MAX_COMMAND_LENGTH];
@@ -161,17 +190,19 @@ void run_benchmark(const char *filename)
 
     char output[1024];
     int dsatur = -1;
-    int enhanced_dsatur = -1;
+    int importance_coloring = -1;
     double dsatur_time = -1;
     double enhanced_time = -1;
 
+    // Extract basename from full path.
+    const char *base = strrchr(filename, '/');
+    base = base ? base + 1 : filename;
+
     while (fgets(output, sizeof(output), fp) != NULL)
-    {
-        sscanf(output, "DSatur: %d", &dsatur);
-        sscanf(output, "Enhanced DSatur: %d", &enhanced_dsatur);
-        sscanf(output, "DSatur completed in: %lf ms", &dsatur_time);
-        sscanf(output, "enhancedDSatur completed in: %lf ms", &enhanced_time);
-    }
+        ; // Busy wait until the process completes
+
+    importance_coloring = getMaxColorFromFile(base, "importance");
+    dsatur = getMaxColorFromFile(base, "dsatur");
 
     pclose(fp);
 
@@ -179,17 +210,29 @@ void run_benchmark(const char *filename)
 
     // Determine ANSI color for Enhanced DSatur column:
     char color[10] = "";
-    if (enhanced_dsatur == optimal)
+    if (importance_coloring == optimal)
+    {
         strcpy(color, "\033[32m"); // green
-    else if (enhanced_dsatur < dsatur)
+        optimals++;
+    }
+    else if (importance_coloring < dsatur)
+    {
         strcpy(color, "\033[33m"); // yellow
-    else if (enhanced_dsatur > dsatur)
+        betters++;
+    }
+    else if (importance_coloring > dsatur)
+    {
         strcpy(color, "\033[31m"); // red
+        worsens++;
+    }
     else
+    {
         strcpy(color, "\033[0m"); // reset
+        equals++;
+    }
 
     char colored_enhanced[128];
-    snprintf(colored_enhanced, sizeof(colored_enhanced), "%s%20d\033[0m", color, enhanced_dsatur);
+    snprintf(colored_enhanced, sizeof(colored_enhanced), "%s%20d\033[0m", color, importance_coloring);
 
     // Updated output: color only the Enhanced DSatur column
     printf("%-45s %10d %20s %10d %15.2f ms %15.2f ms\n",
@@ -282,8 +325,13 @@ int main(int argc, char *argv[])
     const char *dataset_dir = (argc > 1) ? argv[1] : DATASET_DIR;
     // Updated header: Optimal column is now 4th
     printf("%-45s %10s %20s %10s %18s %18s\n",
-           "Filename", "DSatur", "Enhanced DSatur", "Optimal", "DSatur Time", "Enhanced Time");
+           "Filename", "DSatur", "Importance Coloring", "Optimal", "DSatur Time", "Importance Time");
     traverse_directory(dataset_dir);
     printf("Benchmark completed.\n");
+
+    printf("\033[32mOptimals: %d\033[0m\n", optimals); // green
+    printf("\033[33mBetters: %d\033[0m\n", betters);   // yellow
+    printf("\033[31mWorsens: %d\033[0m\n", worsens);   // red
+    printf("\033[0mEquals: %d\033[0m\n", equals);      // reset
     return 0;
 }

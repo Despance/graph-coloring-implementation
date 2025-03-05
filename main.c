@@ -7,9 +7,9 @@
 #include <sys/stat.h>
 #include <sys/types.h>
 #include "graph_constructor.h"
-#include "dsatur.h"          // now provides dsaturSolution()
-//#include "enhanced_dsatur.h" // now provides enhancedDSaturSolution()
-#include "imp_color.h"       // now provides calculateImpColor(), getSolution(), getOrderOfNodes()
+#include "dsatur.h" // now provides dsaturSolution()
+// #include "enhanced_dsatur.h" // now provides enhancedDSaturSolution()
+#include "imp_color.h" // now provides calculateImpColor(), getSolution(), getOrderOfNodes()
 
 // It automatically uses the instance file and the enhanced solution file.
 void runVerifier(const char *instFile)
@@ -22,7 +22,7 @@ void runVerifier(const char *instFile)
     const char *base = strrchr(instFile, '/');
     base = base ? base + 1 : instFile;
     // Enhanced solution file location.
-    snprintf(solFilename, sizeof(solFilename), "solutions/sol_%s_enhanced.txt", base);
+    snprintf(solFilename, sizeof(solFilename), "solutions/%s/sol_%s_importance.txt", base, base);
 
     char command[512];
     snprintf(command, sizeof(command),
@@ -34,7 +34,7 @@ void runVerifier(const char *instFile)
 }
 
 // Updated function to write the coloring solution to a file.
-void writeSolutionToFile(const char *baseFilename, const char *algoType, int *colors, int vertices)
+void writeSolutionToFile(const char *baseFilename, const char *algoType, int *colors, int vertices, int *order)
 {
     char solFilename[256];
     // Extract basename from full path.
@@ -42,12 +42,21 @@ void writeSolutionToFile(const char *baseFilename, const char *algoType, int *co
     base = base ? base + 1 : baseFilename;
 
     struct stat st = {0};
+    // Create "solutions" directory if it doesn't exist.
     if (stat("solutions", &st) == -1)
     {
         mkdir("solutions", 0755);
     }
+    // Create a subdirectory inside solutions for this instance.
+    char solDir[256];
+    snprintf(solDir, sizeof(solDir), "solutions/%s", base);
+    if (stat(solDir, &st) == -1)
+    {
+        mkdir(solDir, 0755);
+    }
 
-    snprintf(solFilename, sizeof(solFilename), "solutions/sol_%s_%s.txt", base, algoType);
+    // Build the solution file path inside the subdirectory.
+    snprintf(solFilename, sizeof(solFilename), "%s/sol_%s_%s.txt", solDir, base, algoType);
 
     FILE *solFile = fopen(solFilename, "w");
     if (!solFile)
@@ -60,8 +69,30 @@ void writeSolutionToFile(const char *baseFilename, const char *algoType, int *co
         // Write color starting from 1, followed by a newline.
         fprintf(solFile, "%d\n", colors[i]);
     }
+
     fclose(solFile);
     printf("Solution written to %s\n", solFilename);
+
+    if (order == NULL)
+        return;
+
+    char orderFilename[256];
+    //
+    snprintf(orderFilename, sizeof(orderFilename), "%s/order_%s_%s.txt", solDir, base, algoType);
+    FILE *orderFile = fopen(orderFilename, "w");
+    if (!orderFile)
+    {
+        fprintf(stderr, "Error: Could not open file %s for writing.\n", orderFilename);
+        return;
+    }
+    for (int i = 0; i < vertices; i++)
+    {
+        // Write color starting from 1, followed by a newline.
+        fprintf(orderFile, "%d\n", order[i]);
+    }
+
+    fclose(orderFile);
+    printf("Order written to %s\n", orderFilename);
 }
 
 int main(int argc, char *argv[])
@@ -85,18 +116,18 @@ int main(int argc, char *argv[])
         int *dsaturColors = dsaturSolution(graph, vertices);
         printf("DSatur algorithm completed.\n");
 
-        writeSolutionToFile(filename, "dsatur", dsaturColors, vertices);
+        writeSolutionToFile(filename, "dsatur", dsaturColors, vertices, NULL);
 
         free(dsaturColors);
 
         int *nodeWeights = (int *)calloc(vertices, sizeof(int));
-        
+
         printf("Running Importance Coloring algorithm...\n");
         calculateImpColor(graph, nodeWeights, vertices, 1);
         int *enhancedColors = getSolution();
         printf("Importance Coloring algorithm completed.\n");
 
-        writeSolutionToFile(filename, "enhanced", enhancedColors, vertices);
+        writeSolutionToFile(filename, "importance", enhancedColors, vertices, getOrderOfNodes());
 
         free(enhancedColors);
 
