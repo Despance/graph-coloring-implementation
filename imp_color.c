@@ -98,10 +98,10 @@ void calculateImpColor(int **graph, int *nodeWeights, int nodes, int n){
     colorGraphImpMixDSatur(graph, nodeWeights, nodes); // Color the graph using First Fit and 2x the weights of the neighbours
     */
 
-    colorGraphImpRecalculate(graph, nodeWeights, nodes, n); // Color the graph by First Fit, removal of colored nodes and recalculation of the node weights
+    //colorGraphImpRecalculate(graph, nodeWeights, nodes, n); // Color the graph by First Fit, removal of colored nodes and recalculation of the node weights
 
     // Color the graph by First Fit, removal of colored nodes and recalculation of the node weights when a new color is needed
-    //colorGraphImpRecalculateWhenNeeded(graph, nodeWeights, nodes, n); 
+    colorGraphImpRecalculateWhenNeeded(graph, nodeWeights, nodes, n); 
 }
 
 // THIS SEEMS TO BE WORKING BUT WORSE THAN RECALCULATE
@@ -137,7 +137,7 @@ void colorGraphImpRecalculateWhenNeeded(int **graph, int *nodeWeights, int nodes
         
         if (color > maxColor && !firstNode){ // If a new color is needed, recalculate the graph
             firstNode = true;
-            removeNode(tempGraph, nodes, currentNode); // Remove the colored node
+            //removeNode(tempGraph, nodes, currentNode); // Remove the colored node
             resetWeights(tempGraph, nodeWeights, nodes); // Reset the node weights
             updateNodeWeights(tempGraph, nodeWeights, nodes, n); // Update the node weights
             i--; // Decrement the counter to recalculate the current node
@@ -149,7 +149,8 @@ void colorGraphImpRecalculateWhenNeeded(int **graph, int *nodeWeights, int nodes
 
         firstNode = false;
         solution[currentNode] = color;
-        colored[currentNode] = true;        
+        colored[currentNode] = true;
+        removeNode(tempGraph, nodes, currentNode); // Remove the colored node     
     }
 
 
