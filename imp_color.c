@@ -18,11 +18,17 @@ void removeNode(int **graph, int nodes, int node);
 void resetWeights(int **graph, int *nodeWeights, int nodes);
 int getPossibleColorRandomFit(int **graph, int *colors, bool *colored, int nodes, int currentNode);
 int getPossibleColorNextFit(int **graph, int *colors, bool *colored, int nodes, int currentNode);
+int getPossibleColorBestFit(int **graph, int *colors, bool *colored, int nodes, int currentNode);
+
 // Global variables
 
 int *solution; // Solution array
 
 int *orderOfNodes; // Order of nodes array
+
+time_t exec_time;
+
+double totalTime_imp = 0.0; // Total execution time
 
 void updateNodeWeights(int **graph, int *nodeWeights, int nodes, int n)
 {
@@ -92,6 +98,7 @@ void updateNodeWeights(int **graph, int *nodeWeights, int nodes, int n)
 // method to color the graph using First Fit and 2x the weights of the neighbours
 void calculateImpColor(int **graph, int *nodeWeights, int nodes, int n)
 {
+    exec_time = clock();
 
     /*
     updateNodeWeights(graph, nodeWeights, nodes, n); // Update node weights
@@ -101,7 +108,9 @@ void calculateImpColor(int **graph, int *nodeWeights, int nodes, int n)
     // colorGraphImpRecalculate(graph, nodeWeights, nodes, n); // Color the graph by First Fit, removal of colored nodes and recalculation of the node weights
 
     // Color the graph by First Fit, removal of colored nodes and recalculation of the node weights when a new color is needed
-    colorGraphImpRecalculateWhenNeeded(graph, nodeWeights, nodes, n);
+    // colorGraphImpRecalculateWhenNeeded(graph, nodeWeights, nodes, n);
+
+    totalTime_imp = ((double)(clock() - exec_time)) / CLOCKS_PER_SEC * 1000;
 }
 
 // THIS SEEMS TO BE WORKING BUT WORSE THAN RECALCULATE
@@ -141,6 +150,8 @@ void colorGraphImpRecalculateWhenNeeded(int **graph, int *nodeWeights, int nodes
         // int color = getPossibleColorRandomFit(graph, solution, colored, nodes, currentNode); // Get potential First Fit color
 
         // int color = getPossibleColorNextFit(graph, solution, colored, nodes, currentNode); // Get potential First Fit color
+
+        // int color = getPossibleColorBestFit(graph, solution, colored, nodes, currentNode); // Get potential First Fit color
         if (color > maxColor && !firstNode)
         { // If a new color is needed, recalculate the graph
             firstNode = true;
@@ -275,6 +286,163 @@ int getPossibleColorNextFit(int **graph, int *colors, bool *colored, int nodes, 
     free(usedColors);
     free(colorCounts);
     return selectedColor;
+}
+
+int getPossibleColorBestFit(int **graph, int *colors, bool *colored, int nodes, int currentNode)
+{
+    // Track colors used by neighbors (these are unavailable)
+    bool *usedColors = (bool *)calloc(nodes, sizeof(bool));
+    // Track colors already used somewhere in the graph
+    bool *existingColors = (bool *)calloc(nodes, sizeof(bool));
+    // Track count of each color used in the graph
+    int *colorUsageCount = (int *)calloc(nodes, sizeof(int));
+
+    // Count existing colors and identify colors unavailable due to neighbors
+    for (int i = 0; i < nodes; i++)
+    {
+        if (colored[i])
+        {
+            int colorIndex = colors[i] - 1;
+            existingColors[colorIndex] = true;
+            colorUsageCount[colorIndex]++;
+
+            // If this is a neighbor, mark color as unavailable
+            if (graph[currentNode][i] > 0)
+            {
+                usedColors[colorIndex] = true;
+            }
+        }
+    }
+
+    // First check: Try to reuse an existing color to avoid introducing new colors
+    int bestExistingColor = 0;
+    bool foundExistingColor = false;
+    int bestUsageCount = 0;
+
+    for (int c = 0; c < nodes; c++)
+    {
+        // If color exists in graph but not used by neighbors
+        if (existingColors[c] && !usedColors[c])
+        {
+            // Prefer the most frequently used color to consolidate
+            if (!foundExistingColor || colorUsageCount[c] > bestUsageCount)
+            {
+                bestExistingColor = c + 1;
+                bestUsageCount = colorUsageCount[c];
+                foundExistingColor = true;
+            }
+        }
+    }
+
+    // If we found an existing color we can reuse, return it
+    if (foundExistingColor)
+    {
+        free(usedColors);
+        free(existingColors);
+        free(colorUsageCount);
+        return bestExistingColor;
+    }
+
+    // Second check: We need to introduce a new color
+    // For each uncolored neighbor, calculate its saturation degree
+    // (how many colors are already blocked for it)
+
+    // Track which neighbors have the highest saturation
+    int *neighborSaturation = (int *)calloc(nodes, sizeof(int));
+    int *colorImpact = (int *)calloc(nodes, sizeof(int));
+
+    for (int neighbor = 0; neighbor < nodes; neighbor++)
+    {
+        // Only consider uncolored neighbors
+        if (graph[currentNode][neighbor] > 0 && !colored[neighbor])
+        {
+            // Count how many colors are unavailable to this neighbor
+            bool *neighborForbiddenColors = (bool *)calloc(nodes, sizeof(bool));
+            int saturation = 0;
+
+            for (int n2 = 0; n2 < nodes; n2++)
+            {
+                if (graph[neighbor][n2] > 0 && colored[n2])
+                {
+                    int colorIdx = colors[n2] - 1;
+                    if (!neighborForbiddenColors[colorIdx])
+                    {
+                        neighborForbiddenColors[colorIdx] = true;
+                        saturation++;
+                    }
+                }
+            }
+
+            neighborSaturation[neighbor] = saturation;
+            free(neighborForbiddenColors);
+        }
+    }
+
+    // Calculate the impact of using each potential new color
+    for (int c = 0; c < nodes; c++)
+    {
+        // Skip colors that are already used by neighbors
+        if (usedColors[c])
+            continue;
+
+        // For each uncolored neighbor, see if using this color would reduce its options
+        for (int neighbor = 0; neighbor < nodes; neighbor++)
+        {
+            if (graph[currentNode][neighbor] > 0 && !colored[neighbor])
+            {
+                // Check if this neighbor has a colored neighbor using color c+1
+                bool hasConflict = false;
+                for (int n2 = 0; n2 < nodes; n2++)
+                {
+                    if (graph[neighbor][n2] > 0 && colored[n2] && colors[n2] == c + 1)
+                    {
+                        hasConflict = true;
+                        break;
+                    }
+                }
+
+                if (hasConflict)
+                {
+                    // Weight the impact by the neighbor's saturation - more impact on highly saturated neighbors
+                    colorImpact[c] += (neighborSaturation[neighbor] + 1);
+                }
+            }
+        }
+    }
+
+    // Find the color with minimal impact
+    int bestColor = -1;
+    int minImpact = nodes * nodes;
+
+    for (int c = 0; c < nodes; c++)
+    {
+        if (!usedColors[c] && colorImpact[c] < minImpact)
+        {
+            minImpact = colorImpact[c];
+            bestColor = c + 1;
+        }
+    }
+
+    // If no color found (shouldn't happen), use first fit as fallback
+    if (bestColor == -1)
+    {
+        for (int c = 0; c < nodes; c++)
+        {
+            if (!usedColors[c])
+            {
+                bestColor = c + 1;
+                break;
+            }
+        }
+    }
+
+    free(usedColors);
+    free(existingColors);
+    free(colorUsageCount);
+    free(neighborSaturation);
+    free(colorImpact);
+
+    return bestColor;
 }
 
 int getPossibleColorRandomFit(int **graph, int *colors, bool *colored, int nodes, int currentNode)

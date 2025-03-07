@@ -7,20 +7,11 @@
 #include <string.h>
 #include <ctype.h> // Add this include near other includes
 
-#ifdef _WIN32
-#include <windows.h>
-#include <tchar.h>
-#include <direct.h>
-#define PATH_SEPARATOR "\\"
-#define EXECUTABLE_NAME "a.exe"
-#define popen _popen
-#define pclose _pclose
-#else
 #include <dirent.h>
 #include <unistd.h>
 #define PATH_SEPARATOR "/"
 #define EXECUTABLE_NAME "./graphColoring.out"
-#endif
+#
 
 #define MAX_FILENAME_LENGTH 256
 #define MAX_COMMAND_LENGTH 512
@@ -175,6 +166,7 @@ int optimals = 0;
 int betters = 0;
 int worsens = 0;
 int equals = 0;
+int errors = 0;
 
 void run_benchmark(const char *filename)
 {
@@ -192,14 +184,20 @@ void run_benchmark(const char *filename)
     int dsatur = -1;
     int importance_coloring = -1;
     double dsatur_time = -1;
-    double enhanced_time = -1;
+    double importance_time = -1;
 
     // Extract basename from full path.
     const char *base = strrchr(filename, '/');
     base = base ? base + 1 : filename;
 
     while (fgets(output, sizeof(output), fp) != NULL)
-        ; // Busy wait until the process completes
+    {
+        double tmp;
+        if (sscanf(output, "DSatur-Time: %lf", &tmp) == 1)
+            dsatur_time = tmp;
+        if (sscanf(output, "Importance-Time: %lf", &tmp) == 1)
+            importance_time = tmp;
+    }
 
     importance_coloring = getMaxColorFromFile(base, "importance");
     dsatur = getMaxColorFromFile(base, "dsatur");
@@ -208,9 +206,22 @@ void run_benchmark(const char *filename)
 
     int optimal = get_optimal_solution(filename);
 
+    // Skip the errors
+    if (dsatur == -1 || importance_coloring == -1)
+    {
+        errors++;
+        return;
+    }
+
     // Determine ANSI color for Enhanced DSatur column:
     char color[10] = "";
-    if (importance_coloring == optimal)
+
+    if (importance_coloring == dsatur)
+    {
+        strcpy(color, "\033[0m"); // reset
+        equals++;
+    }
+    else if (importance_coloring == optimal)
     {
         strcpy(color, "\033[32m"); // green
         optimals++;
@@ -236,51 +247,11 @@ void run_benchmark(const char *filename)
 
     // Updated output: color only the Enhanced DSatur column
     printf("%-45s %10d %20s %10d %15.2f ms %15.2f ms\n",
-           filename, dsatur, colored_enhanced, optimal, dsatur_time, enhanced_time);
+           filename, dsatur, colored_enhanced, optimal, dsatur_time, importance_time);
 }
 
 void traverse_directory(const char *dir_path)
 {
-#ifdef _WIN32
-    WIN32_FIND_DATA find_file_data;
-    HANDLE h_find = INVALID_HANDLE_VALUE;
-
-    char search_path[MAX_FILENAME_LENGTH];
-    snprintf(search_path, sizeof(search_path), "%s\\*", dir_path);
-
-    h_find = FindFirstFile(search_path, &find_file_data);
-
-    if (h_find == INVALID_HANDLE_VALUE)
-    {
-        fprintf(stderr, "Error opening directory: %s\n", dir_path);
-        return;
-    }
-
-    do
-    {
-        if (find_file_data.dwFileAttributes & FILE_ATTRIBUTE_DIRECTORY)
-        {
-            // Check for "." and ".."
-            if (strcmp(find_file_data.cFileName, ".") != 0 && strcmp(find_file_data.cFileName, "..") != 0)
-            {
-                char subdir[MAX_FILENAME_LENGTH];
-                snprintf(subdir, sizeof(subdir), "%s\\%s", dir_path, find_file_data.cFileName);
-                traverse_directory(subdir);
-            }
-        }
-        else
-        {
-            if (has_accepted_extension(find_file_data.cFileName))
-            {
-                char filepath[MAX_FILENAME_LENGTH];
-                snprintf(filepath, sizeof(filepath), "%s\\%s", dir_path, find_file_data.cFileName);
-                run_benchmark(filepath);
-            }
-        }
-    } while (FindNextFile(h_find, &find_file_data) != 0);
-
-    FindClose(h_find);
-#else
     DIR *d;
     struct dirent *dir;
     d = opendir(dir_path);
@@ -317,7 +288,6 @@ void traverse_directory(const char *dir_path)
     {
         perror("opendir");
     }
-#endif
 }
 
 int main(int argc, char *argv[])
@@ -333,5 +303,6 @@ int main(int argc, char *argv[])
     printf("\033[33mBetters: %d\033[0m\n", betters);   // yellow
     printf("\033[31mWorsens: %d\033[0m\n", worsens);   // red
     printf("\033[0mEquals: %d\033[0m\n", equals);      // reset
+    printf("Skipped files: %d\n", errors);
     return 0;
 }
