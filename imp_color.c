@@ -16,7 +16,8 @@ int getPossibleColorFirstFit(int **graph, int *colors, bool *colored, int nodes,
 int findHighestWeightedNode(int *nodeWeights, bool *colored, int vertices);
 void removeNode(int **graph, int nodes, int node);
 void resetWeights(int **graph, int *nodeWeights, int nodes);
-
+int getPossibleColorRandomFit(int **graph, int *colors, bool *colored, int nodes, int currentNode);
+int getPossibleColorNextFit(int **graph, int *colors, bool *colored, int nodes, int currentNode);
 // Global variables
 
 int *solution; // Solution array
@@ -137,6 +138,9 @@ void colorGraphImpRecalculateWhenNeeded(int **graph, int *nodeWeights, int nodes
         orderOfNodes[i] = currentNode;
         int color = getPossibleColorFirstFit(graph, solution, colored, nodes, currentNode); // Get potential First Fit color
 
+        // int color = getPossibleColorRandomFit(graph, solution, colored, nodes, currentNode); // Get potential First Fit color
+
+        // int color = getPossibleColorNextFit(graph, solution, colored, nodes, currentNode); // Get potential First Fit color
         if (color > maxColor && !firstNode)
         { // If a new color is needed, recalculate the graph
             firstNode = true;
@@ -192,8 +196,9 @@ void colorGraphImpRecalculate(int **graph, int *nodeWeights, int nodes, int n)
         int currentNode = findHighestWeightedNode(nodeWeights, colored, nodes);
         orderOfNodes[i] = currentNode;
         colorNodeFirstFit(graph, solution, colored, nodes, currentNode); // First Fit Coloring the highest weighted node
-        removeNode(tempGraph, nodes, currentNode);                       // Remove the colored node
-        resetWeights(tempGraph, nodeWeights, nodes);                     // Reset the node weights
+
+        removeNode(tempGraph, nodes, currentNode);   // Remove the colored node
+        resetWeights(tempGraph, nodeWeights, nodes); // Reset the node weights
     }
 
     // free memory for tempGraph
@@ -215,6 +220,119 @@ void removeNode(int **graph, int nodes, int node)
     }
 }
 
+int getPossibleColorNextFit(int **graph, int *colors, bool *colored, int nodes, int currentNode)
+{
+    bool *usedColors = (bool *)calloc(nodes, sizeof(bool));
+    int *colorCounts = (int *)calloc(nodes, sizeof(int));
+
+    // Check neighbor colors and count usage of all colors
+    for (int i = 0; i < nodes; i++)
+    {
+        // Mark colors used by neighbors as unavailable
+        if (graph[currentNode][i] > 0 && colored[i])
+        {
+            usedColors[colors[i] - 1] = true;
+        }
+
+        // Count usage of each color in the graph
+        if (colored[i] && colors[i] > 0)
+        {
+            colorCounts[colors[i] - 1]++;
+        }
+    }
+
+    // First check if there are already-used colors available
+    int selectedColor = -1;
+    int minUsage = nodes + 1; // Start with a value higher than possible node count
+
+    // Prioritize using an existing color with the least usage
+    for (int c = 0; c < nodes; c++)
+    {
+        // If this color is used in the graph but not by neighbors
+        if (colorCounts[c] > 0 && !usedColors[c])
+        {
+            if (colorCounts[c] < minUsage)
+            {
+                minUsage = colorCounts[c];
+                selectedColor = c + 1; // Convert from 0-indexed to 1-indexed
+            }
+        }
+    }
+
+    // If no existing color is available, find the first unused color
+    if (selectedColor == -1)
+    {
+        for (int c = 0; c < nodes; c++)
+        {
+            if (!usedColors[c])
+            {
+                selectedColor = c + 1;
+                break;
+            }
+        }
+    }
+
+    free(usedColors);
+    free(colorCounts);
+    return selectedColor;
+}
+
+int getPossibleColorRandomFit(int **graph, int *colors, bool *colored, int nodes, int currentNode)
+{
+    bool *usedColors = (bool *)calloc(nodes, sizeof(bool));
+    bool *globalUsedColors = (bool *)calloc(nodes, sizeof(bool));
+
+    // Identify colors used by neighbors
+    for (int i = 0; i < nodes; i++)
+    {
+        if (graph[currentNode][i] > 0 && colored[i]) // Check adjacency and color status
+        {
+            usedColors[colors[i] - 1] = true; // Mark the color as used by neighbors
+        }
+
+        // Track all colors used in the graph
+        if (colored[i] && colors[i] > 0)
+        {
+            globalUsedColors[colors[i] - 1] = true;
+        }
+    }
+
+    // Create array of available colors that are already used elsewhere
+    int *availableExistingColors = (int *)calloc(nodes, sizeof(int));
+    int existingColorCount = 0;
+
+    for (int i = 0; i < nodes; i++)
+    {
+        // If color is used in graph but not by neighbors
+        if (globalUsedColors[i] && !usedColors[i])
+        {
+            availableExistingColors[existingColorCount++] = i + 1;
+        }
+    }
+
+    int color;
+
+    srand(time(NULL)); // Seed the random number generator with the current time
+    if (existingColorCount > 0)
+    {
+        color = availableExistingColors[rand() % existingColorCount];
+    }
+    else
+    {
+        // No existing colors available, find first unused color
+        color = 0;
+        while (color < nodes && usedColors[color])
+        {
+            color++;
+        }
+        color++; // Convert from 0-indexed to 1-indexed
+    }
+
+    free(availableExistingColors);
+    free(globalUsedColors);
+    free(usedColors);
+    return color;
+}
 // function to reset the node and edge weights
 void resetWeights(int **graph, int *nodeWeights, int nodes)
 {
