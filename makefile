@@ -6,4 +6,4 @@ clean:
 
 
 benchmark:
-	gcc benchmark.cpp -o benchmark.out -O3
+	gcc -pg benchmark.cpp -o benchmark.out -O3

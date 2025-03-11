@@ -1,6 +1,6 @@
 // DO NOT USE WHILE COMPILING THE PROJECT
 // COMPILE THIS FILE SEPARATELY USING THE FOLLOWING COMMAND
-// gcc benchmark.cpp -o benchmark
+// gcc -pg benchmark.cpp -o benchmark.out
 
 #include <stdio.h>
 #include <stdlib.h>
@@ -41,45 +41,35 @@ void generate_unique_filename(char *filename, size_t size)
              t->tm_hour, t->tm_min);
 }
 
-void trim(char *str)
+void run_gprof_analysis(const char *output_filename)
 {
-    char *start = str;
-    while (*start && isspace((unsigned char)*start))
-        start++;
-    if (start != str)
-        memmove(str, start, strlen(start) + 1);
-    char *end = str + strlen(str) - 1;
-    while (end >= str && isspace((unsigned char)*end))
-    {
-        *end = '\0';
-        end--;
-    }
+    char gprof_command[MAX_COMMAND_LENGTH];
+    snprintf(gprof_command, sizeof(gprof_command), "gprof benchmark.out gmon.out > %s", output_filename);
+    system(gprof_command);
 }
 
-int parse_csv_line(const char *line, char tokens[][128], int max_tokens)
+void run_perf_analysis(const char *filename, FILE *output_fp)
 {
-    int token_index = 0, i = 0, j = 0;
-    int in_quotes = 0;
-    while (line[i] != '\0' && token_index < max_tokens)
+    char perf_command[MAX_COMMAND_LENGTH];
+    snprintf(perf_command, sizeof(perf_command), "perf stat -e cycles,instructions,cache-misses %s %s 2>&1",
+             EXECUTABLE_NAME, filename);
+    
+    FILE *fp = popen(perf_command, "r");
+    if (fp == NULL)
     {
-        if (line[i] == '"')
-        {
-            in_quotes = !in_quotes;
-        }
-        else if (line[i] == ',' && !in_quotes)
-        {
-            tokens[token_index][j] = '\0';
-            token_index++;
-            j = 0;
-        }
-        else
-        {
-            tokens[token_index][j++] = line[i];
-        }
-        i++;
+        perror("popen");
+        exit(EXIT_FAILURE);
     }
-    tokens[token_index][j] = '\0';
-    return token_index + 1;
+    
+    char output[1024];
+    fprintf(output_fp, "\nPerformance Metrics for %s:\n", filename);
+    while (fgets(output, sizeof(output), fp) != NULL)
+    {
+        fprintf(output_fp, "%s", output);
+    }
+    fprintf(output_fp, "\n");
+    
+    pclose(fp);
 }
 
 void run_benchmark(const char *filename, FILE *output_fp)
@@ -111,6 +101,8 @@ void run_benchmark(const char *filename, FILE *output_fp)
     pclose(fp);
     fprintf(output_fp, "%-45s %10d %20d %15.2f ms %15.2f ms\n",
             filename, dsatur, enhanced_dsatur, dsatur_time, enhanced_time);
+    
+    run_perf_analysis(filename, output_fp);
 }
 
 void traverse_directory(const char *dir_path, FILE *output_fp)
@@ -164,5 +156,7 @@ int main(int argc, char *argv[])
     traverse_directory(dataset_dir, output_fp);
     fprintf(output_fp, "Benchmark completed.\n");
     fclose(output_fp);
+    
+    run_gprof_analysis(output_filename);
     return 0;
 }
