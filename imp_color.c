@@ -14,6 +14,7 @@ void updateNeighboursWeights(int **graph, int *nodeWeights, int nodes, int curre
 void colorNodeFirstFit(int **graph, int *colors, bool *colored, int nodes, int currentNode);
 int getPossibleColorFirstFit(int **graph, int *colors, bool *colored, int nodes, int currentNode);
 int findHighestWeightedNode(int *nodeWeights, bool *colored, int vertices);
+int findHighestWeightedNeighbourNode(int **graph, int *nodeWeights, bool *colored, int nodes, int currentNode);
 void removeNode(int **graph, int nodes, int node);
 void resetWeights(int **graph, int *nodeWeights, int nodes);
 
@@ -103,9 +104,7 @@ void calculateImpColor(int **graph, int *nodeWeights, int nodes, int n)
     colorGraphImpRecalculateWhenNeeded(graph, nodeWeights, nodes, n);
 }
 
-// THIS SEEMS TO BE WORKING BUT WORSE THAN RECALCULATE
-// NEEDS FURTHER INVESTIGATIONS
-// ADVISE: USE RECALCULATE INSTEAD
+
 // Coloring by removal of colored nodes and recalculation of the node weights only when a new color is needed
 void colorGraphImpRecalculateWhenNeeded(int **graph, int *nodeWeights, int nodes, int n)
 {
@@ -129,11 +128,12 @@ void colorGraphImpRecalculateWhenNeeded(int **graph, int *nodeWeights, int nodes
     }
 
     updateNodeWeights(tempGraph, nodeWeights, nodes, n); // calculate the initial node weights
-
+    //int previousNode = -1; // for best neighbour coloring
     // Coloring process, First Fit and recalculation of the node weights when a new color is needed
     for (int i = 0; i < nodes; i++)
     {
         int currentNode = findHighestWeightedNode(nodeWeights, colored, nodes);
+        //currentNode = (previousNode != -1)? findHighestWeightedNeighbourNode(graph, nodeWeights, colored, nodes, previousNode) : currentNode; // for best neighbour coloring
         orderOfNodes[i] = currentNode;
         int color = getPossibleColorFirstFit(graph, solution, colored, nodes, currentNode); // Get potential First Fit color
 
@@ -155,6 +155,7 @@ void colorGraphImpRecalculateWhenNeeded(int **graph, int *nodeWeights, int nodes
         solution[currentNode] = color;
         colored[currentNode] = true;
         removeNode(tempGraph, nodes, currentNode); // Remove the colored node
+        //previousNode = currentNode; // for best neighbour coloring
     }
 
     // free memory for tempGraph
@@ -203,6 +204,23 @@ void colorGraphImpRecalculate(int **graph, int *nodeWeights, int nodes, int n)
     }
     free(tempGraph);
     free(colored);
+}
+
+// Returns the highest weighted neighbour node
+int findHighestWeightedNeighbourNode(int **graph, int *nodeWeights, bool *colored, int nodes, int currentNode){
+    int maxWeight = -1, selectedNode = -1;
+    for (int i = 0; i < nodes; i++)
+    {   
+        if(graph[currentNode][i] > 0 && !colored[i] && nodeWeights[i] > maxWeight){
+            maxWeight = nodeWeights[i];
+            selectedNode = i;
+        }
+    }
+    if(selectedNode == -1){
+        selectedNode = findHighestWeightedNode(nodeWeights, colored, nodes);
+    }
+    return selectedNode;
+
 }
 
 // function to remove a node from the graph by setting the according adjacency matrix values to 0
