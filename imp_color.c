@@ -9,9 +9,13 @@ void updateNodeWeights(int **graph, int *nodeWeights, int nodes, int n);
 void calculateImpColor(int **graph, int *nodeWeights, int nodes, int n);
 void colorGraphImpRecalculate(int **graph, int *nodeWeights, int nodes, int n);
 void colorGraphImpRecalculateWhenNeeded(int **graph, int *nodeWeights, int nodes, int n);
+void colorGraphFlowerHerd(int **graph, int *nodeWeights, int nodes, int n);
 void colorGraphImpMixDSatur(int **graph, int *nodeWeights, int nodes);
 void updateNeighboursWeights(int **graph, int *nodeWeights, int nodes, int currentNode, int n);
 void colorNodeFirstFit(int **graph, int *colors, bool *colored, int nodes, int currentNode);
+int findHighestWeightedMarkedNode(int **graph, int *nodeWeights, bool *colored, bool *uncoloredNeighbours, int nodes);
+void colorAndMarkNeighbours(int **graph, int nodes, int *solution, int *orderOfNodes, int currentNode, bool *colored, bool *uncoloredNeighbours, int *index);
+void markNeighbours(int **graph, int nodes, bool *colored, bool *uncoloredNeighbours, int currentNode);
 int getPossibleColorFirstFit(int **graph, int *colors, bool *colored, int nodes, int currentNode);
 int findHighestWeightedNode(int *nodeWeights, bool *colored, int vertices);
 int findHighestWeightedNeighbourNode(int **graph, int *nodeWeights, bool *colored, int nodes, int currentNode);
@@ -101,7 +105,8 @@ void calculateImpColor(int **graph, int *nodeWeights, int nodes, int n)
     // colorGraphImpRecalculate(graph, nodeWeights, nodes, n); // Color the graph by First Fit, removal of colored nodes and recalculation of the node weights
 
     // Color the graph by First Fit, removal of colored nodes and recalculation of the node weights when a new color is needed
-    colorGraphImpRecalculateWhenNeeded(graph, nodeWeights, nodes, n);
+    //colorGraphImpRecalculateWhenNeeded(graph, nodeWeights, nodes, n);
+    colorGraphFlowerHerd(graph, nodeWeights, nodes, n); // Color the graph using the Flower algorithm
 }
 
 
@@ -204,6 +209,103 @@ void colorGraphImpRecalculate(int **graph, int *nodeWeights, int nodes, int n)
     }
     free(tempGraph);
     free(colored);
+}
+
+// THIS DOES NOT WORK VERY WELL (BUT WORKS)
+// Thid firstly colors the best node, then colors the neighbours of that node
+// then it marks the neighbours of the neighbours as uncolored
+// then it colors the highest weighted marked node
+// then colors its neighbours and marks their neighbours as uncolored and so on
+// This is the Flower Herd algorithm (found by muho, but does not work very well)
+void colorGraphFlowerHerd(int **graph, int *nodeWeights, int nodes, int n)
+{
+    solution = (int *)calloc(nodes, sizeof(int)); // Solution array, 0 is no color assigned
+    orderOfNodes = (int *)malloc(nodes * sizeof(int));
+    bool *colored = (bool *)calloc(nodes, sizeof(bool));
+    int **tempGraph = (int **)malloc(nodes * sizeof(int *)); // Temporary graph
+    bool *uncoloredNeighbours = (bool *)calloc(nodes, sizeof(bool));
+
+    // Allocate memory for tempGraph
+    for (int i = 0; i < nodes; i++)
+    {
+        tempGraph[i] = (int *)malloc(nodes * sizeof(int));
+    }
+
+    // copy graph to temp graph
+    for (int i = 0; i < nodes; i++)
+    {
+        memcpy(tempGraph[i], graph[i], nodes * sizeof(int));
+    }
+
+    updateNodeWeights(tempGraph, nodeWeights, nodes, n); // Update the node weights
+
+    int i = 0;
+    int *index = &i;
+    for (; i < nodes; i++)
+    {
+        int currentNode = findHighestWeightedMarkedNode(graph, nodeWeights, colored, uncoloredNeighbours, nodes);
+        colorNodeFirstFit(graph, solution, colored, nodes, currentNode); // First Fit Coloring the current node
+        orderOfNodes[i] = currentNode;
+        uncoloredNeighbours[currentNode] = false; // Mark as colored
+        colorAndMarkNeighbours(graph, nodes, solution, orderOfNodes, currentNode, colored, uncoloredNeighbours, index);
+
+    }
+
+    // free memory for tempGraph
+    for (int i = 0; i < nodes; i++)
+    {
+        free(tempGraph[i]);
+    }
+    free(tempGraph);
+    free(colored);
+}
+
+// Color the neighbours of the current node and mark their neighbours as uncolored
+void colorAndMarkNeighbours(int **graph, int nodes, int *solution, int *orderOfNodes, int currentNode, bool *colored, bool *uncoloredNeighbours, int *index)
+{   
+
+    for (int i = 0; i < nodes; i++)
+    {
+        if (graph[currentNode][i] > 0 && !colored[i])
+        {
+            colorNodeFirstFit(graph, solution, colored, nodes, i); // First Fit Coloring the neighbours
+            orderOfNodes[*index] = i;
+            *index = *index + 1;
+            uncoloredNeighbours[i] = false; // Mark the neighbour as colored
+            markNeighbours(graph, nodes, colored, uncoloredNeighbours, i);
+
+        }
+    }
+}
+
+// Marke the uncolored neighbours of the current node
+void markNeighbours(int **graph, int nodes, bool *colored, bool *uncoloredNeighbours, int currentNode)
+{
+    for (int i = 0; i < nodes; i++)
+    {
+        if (graph[currentNode][i] > 0 && !colored[i])
+        {
+            uncoloredNeighbours[i] = true;
+        }
+    }
+
+}
+
+int findHighestWeightedMarkedNode(int **graph, int *nodeWeights, bool *colored, bool *uncoloredNeighbours, int nodes)
+{
+    int maxWeight = -1, selectedNode = -1;
+    for (int i = 0; i < nodes; i++)
+    {
+        if (uncoloredNeighbours[i] && nodeWeights[i] > maxWeight)
+        {
+            maxWeight = nodeWeights[i];
+            selectedNode = i;
+        }
+    }
+    if(selectedNode == -1){
+        selectedNode = findHighestWeightedNode(nodeWeights, colored, nodes);
+    }
+    return selectedNode;
 }
 
 // Returns the highest weighted neighbour node
