@@ -433,7 +433,7 @@ int colorNodeAndNeighbors(int **graph, int **tempGraph, int *nodeWeights, int no
             }
         }
         // copy the next colored to the current colored
-        for(int i; i<nodes; i++){
+        for(int i = 0; i<nodes; i++){
             toBeColored[i] = toBeNextColored[i];
             toBeNextColored[i] = false;
         }
