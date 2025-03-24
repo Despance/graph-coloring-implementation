@@ -18,18 +18,28 @@ void runVerifier(const char *instFile)
     printf("Verifier is not supported on Windows systems.\n");
 #else
     char solFilename[256];
+    char sol2Filename[256];
     // Extract basename from full path.
     const char *base = strrchr(instFile, '/');
     base = base ? base + 1 : instFile;
     // Enhanced solution file location.
+    snprintf(sol2Filename, sizeof(sol2Filename), "solutions/%s/sol_%s_dsatur.txt", base, base);
     snprintf(solFilename, sizeof(solFilename), "solutions/%s/sol_%s_importance.txt", base, base);
 
     char command[512];
+
+    snprintf(command, sizeof(command),
+             "./coloring-verifier-main/src/coloring-verifier -i %s -s %s -p1",
+             instFile, sol2Filename);
+    printf("Running verifier: %s\n", command);
+    system(command);
+
     snprintf(command, sizeof(command),
              "./coloring-verifier-main/src/coloring-verifier -i %s -s %s -p1",
              instFile, solFilename);
     printf("Running verifier: %s\n", command);
     system(command);
+
 #endif
 }
 
@@ -113,10 +123,10 @@ int main(int argc, char *argv[])
         printf("Graph constructed with %d vertices.\n", vertices);
 
         printf("Running DSatur algorithm...\n");
-        int *dsaturColors = dsaturSolution(graph, vertices);
+        dsatur(graph, vertices);
+        int *dsaturColors = getDsaturSolution();
         printf("DSatur algorithm completed.\n");
-
-        writeSolutionToFile(filename, "dsatur", dsaturColors, vertices, NULL);
+        writeSolutionToFile(filename, "dsatur", dsaturColors, vertices, getDsaturOrderOfNodes());
 
         free(dsaturColors);
 
@@ -134,6 +144,9 @@ int main(int argc, char *argv[])
         // Automatically run the verifier for the enhanced solution.
 
         runVerifier(filename);
+
+        printf("DSatur-Time: %lf \n", totalTime_DSatur);
+        printf("Importance-Time: %lf", totalTime_imp);
 
         free(nodeWeights);
         for (int i = 0; i < vertices; i++)

@@ -4,7 +4,7 @@
 #include <time.h>
 
 // Global variable to store the total execution time
-double totalTime = 0.0;
+double totalTime_imp = 0.0;
 
 // Function to convert the graph to a weighted graph
 void convertToWeightedGraph(int **graph, int vertices, int n)
@@ -205,7 +205,7 @@ int enhancedDSatur(int **graph, int *nodeWeights, int vertices)
     // Time measurement end
     clock_t end_time = clock();
     double elapsed_time = ((double)(end_time - start_time)) / CLOCKS_PER_SEC * 1000; // Milisaniye cinsinden
-    totalTime += elapsed_time;                                                       // Toplam süreye ekle
+    totalTime_imp += elapsed_time;                                                   // Toplam süreye ekle
 
     printf("enhancedDSatur completed in: %.2f ms\n", elapsed_time);
 
@@ -302,5 +302,5 @@ int *enhancedDSaturSolution(int **graph, int *nodeWeights, int vertices)
 // Function to print the total execution time
 void printTotalTime()
 {
-    printf("Total execution time: %.2f ms\n", totalTime);
+    printf("Total execution time: %.2f ms\n", totalTime_imp);
 }
