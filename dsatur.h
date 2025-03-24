@@ -4,7 +4,11 @@
 #define DSATUR_H
 #include "graph_constructor.h"
 
-int dsatur(int **graph, int vertices);
-int *dsaturSolution(int **graph, int vertices);
+void dsatur(int **graph, int vertices);
 
+int *getDsaturSolution();
+
+int *getDsaturOrderOfNodes();
+
+double totalTime_DSatur;
 #endif
