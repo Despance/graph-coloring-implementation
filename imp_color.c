@@ -32,7 +32,7 @@ int *solution; // Solution array
 
 int *orderOfNodes; // Order of nodes array
 
-time_t exec_time;
+time_t exec_time_imp;
 
 double totalTime_imp = 0.0; // Total execution time
 
@@ -104,7 +104,7 @@ void updateNodeWeights(int **graph, int *nodeWeights, int nodes, int n)
 // method to color the graph using First Fit and 2x the weights of the neighbours
 void calculateImpColor(int **graph, int *nodeWeights, int nodes, int n)
 {
-    exec_time = clock();
+    exec_time_imp = clock();
 
     /*
     updateNodeWeights(graph, nodeWeights, nodes, n); // Update node weights
@@ -114,11 +114,12 @@ void calculateImpColor(int **graph, int *nodeWeights, int nodes, int n)
     // colorGraphImpRecalculate(graph, nodeWeights, nodes, n); // Color the graph by First Fit, removal of colored nodes and recalculation of the node weights
 
     // Color the graph by First Fit, removal of colored nodes and recalculation of the node weights when a new color is needed
-    colorGraphImpRecalculateWhenNeeded(graph, nodeWeights, nodes, n);
+    // colorGraphImpRecalculateWhenNeeded(graph, nodeWeights, nodes, n);
 
     // colorGraphFlowerHerd(graph, nodeWeights, nodes, n);
+    colorGraphFlowerImpRecalculateWhenNeeded(graph, nodeWeights, nodes, n, 2);
 
-    totalTime_imp = ((double)(clock() - exec_time)) / CLOCKS_PER_SEC * 1000;
+    totalTime_imp = ((double)(clock() - exec_time_imp)) / CLOCKS_PER_SEC * 1000;
 }
 
 

@@ -8,5 +8,5 @@ void calculateImpColor(int **graph, int *nodeWeights, int nodes, int n);
 int *getSolution();
 int *getOrderOfNodes();
 
-double totalTime_imp;
+extern double totalTime_imp;
 #endif
