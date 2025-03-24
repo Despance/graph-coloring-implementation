@@ -102,7 +102,7 @@ void run_benchmark(const char *filename, FILE *output_fp)
     fprintf(output_fp, "%-45s %10d %20d %15.2f ms %15.2f ms\n",
             filename, dsatur, enhanced_dsatur, dsatur_time, enhanced_time);
     
-    run_perf_analysis(filename, output_fp);
+    //run_perf_analysis(filename, output_fp);
 }
 
 void traverse_directory(const char *dir_path, FILE *output_fp)
@@ -157,6 +157,6 @@ int main(int argc, char *argv[])
     fprintf(output_fp, "Benchmark completed.\n");
     fclose(output_fp);
     
-    run_gprof_analysis(output_filename);
+    //run_gprof_analysis(output_filename);
     return 0;
 }
