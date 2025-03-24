@@ -108,7 +108,7 @@ void calculateImpColor(int **graph, int *nodeWeights, int nodes, int n)
     // colorGraphImpRecalculate(graph, nodeWeights, nodes, n); // Color the graph by First Fit, removal of colored nodes and recalculation of the node weights
 
     // Color the graph by First Fit, removal of colored nodes and recalculation of the node weights when a new color is needed
-    // colorGraphImpRecalculateWhenNeeded(graph, nodeWeights, nodes, n);
+    colorGraphImpRecalculateWhenNeeded(graph, nodeWeights, nodes, n);
 
     totalTime_imp = ((double)(clock() - exec_time)) / CLOCKS_PER_SEC * 1000;
 }

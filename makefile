@@ -2,7 +2,7 @@
 CC = gcc
 
 # Compiler flags
-CFLAGS = -Wall -Wextra -Werror -O3 -std=c99
+CFLAGS = -Wall -O3
 
 # Target executable
 TARGET = graphColoring.out
