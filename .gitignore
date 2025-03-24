@@ -39,6 +39,8 @@
 *.i*86
 *.x86_64
 *.hex
+coloring-verifier-main/src/coloring-verifier
+coloring-verifier-main\src\coloring-verifier
 
 # Debug files
 *.dSYM/
