@@ -10,5 +10,5 @@ int *getDsaturSolution();
 
 int *getDsaturOrderOfNodes();
 
-extern double totalTime_DSatur;
+extern double totalTime_dsatur;
 #endif
