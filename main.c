@@ -10,6 +10,7 @@
 #include "dsatur.h" // now provides dsaturSolution()
 // #include "enhanced_dsatur.h" // now provides enhancedDSaturSolution()
 #include "imp_color.h" // now provides calculateImpColor(), getSolution(), getOrderOfNodes()
+#include "dsatur_mix.h"
 
 // It automatically uses the instance file and the enhanced solution file.
 void runVerifier(const char *instFile)
@@ -133,11 +134,12 @@ int main(int argc, char *argv[])
         int *nodeWeights = (int *)calloc(vertices, sizeof(int));
 
         printf("Running Importance Coloring algorithm...\n");
-        calculateImpColor(graph, nodeWeights, vertices, 1);
-        int *enhancedColors = getSolution();
+        dsatur_mix(graph, vertices, 2);
+        int *enhancedColors = getMixSolution();
+        int *mixOrder = getMixOrderOfNodes();
         printf("Importance Coloring algorithm completed.\n");
 
-        writeSolutionToFile(filename, "importance", enhancedColors, vertices, getOrderOfNodes());
+        writeSolutionToFile(filename, "importance", enhancedColors, vertices, mixOrder);
 
         free(enhancedColors);
 
@@ -145,8 +147,8 @@ int main(int argc, char *argv[])
 
         runVerifier(filename);
 
-        printf("DSatur-Time: %lf \n", totalTime_DSatur);
-        printf("Importance-Time: %lf", totalTime_imp);
+        printf("DSatur-Time: %lf \n", totalTime_dsatur);
+        printf("Importance-Time: %lf ", totalTime_mix);
 
         free(nodeWeights);
         for (int i = 0; i < vertices; i++)

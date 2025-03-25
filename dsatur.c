@@ -4,10 +4,10 @@
 #include <time.h>
 
 int *dsaturSolution;
-int *dSaturOrder;
+int *dsaturOrder;
 
-time_t exec_time;
-double totalTime_DSatur = 0.0;
+time_t exec_time_dsatur;
+double totalTime_dsatur = 0.0;
 int *getDsaturSolution()
 {
     return dsaturSolution;
@@ -15,7 +15,7 @@ int *getDsaturSolution()
 
 int *getDsaturOrderOfNodes()
 {
-    return dSaturOrder;
+    return dsaturOrder;
 }
 
 // Function to find the vertex with the maximum saturation degree
@@ -45,10 +45,10 @@ int findMaxSaturationVertex(int vertices, int saturation[], bool colored[], int 
 void dsatur(int **graph, int vertices)
 {
 
-    exec_time = clock();
+    exec_time_dsatur = clock();
 
     dsaturSolution = (int *)calloc(vertices, sizeof(int));  // Array to store colors for each vertex
-    dSaturOrder = (int *)calloc(vertices, sizeof(int));     // Array to store the order of nodes
+    dsaturOrder = (int *)calloc(vertices, sizeof(int));     // Array to store the order of nodes
     int *saturation = (int *)calloc(vertices, sizeof(int)); // Saturation degree for each vertex
     bool *colored = (bool *)calloc(vertices, sizeof(bool)); // Whether a vertex is colored
     int *degree = (int *)calloc(vertices, sizeof(int));     // Degree of each vertex
@@ -87,7 +87,7 @@ void dsatur(int **graph, int vertices)
         }
 
         dsaturSolution[vertex] = color; // Assign the color
-        dSaturOrder[i] = vertex;        // Store the order of nodes
+        dsaturOrder[i] = vertex;        // Store the order of nodes
         colored[vertex] = true;
 
         free(usedColors); // Free the temporary array for used colors
@@ -122,7 +122,7 @@ void dsatur(int **graph, int vertices)
         }
     }
 
-    totalTime_DSatur = (double)(clock() - exec_time) / CLOCKS_PER_SEC;
+    totalTime_dsatur = (double)(clock() - exec_time_dsatur) / CLOCKS_PER_SEC;
 
     free(saturation);
     free(colored);

@@ -10,7 +10,7 @@ BENCHMARK_TARGET = benchmark.out
 SOLUTION_DIR = solutions
 
 # Source files
-SRCS = main.c dsatur.c graph_constructor.c imp_color.c
+SRCS = main.c dsatur.c graph_constructor.c imp_color.c dsatur_mix.c
 BENCHMARK_SRCS = benchmark.c
 
 # Object files directory
