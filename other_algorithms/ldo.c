@@ -9,10 +9,10 @@ double totalTime_ldo = 0.0;
 static int *ldoSolution = NULL;
 static int *ldoOrder = NULL;
 
-// Function to find the node with the lowest degree order
-int findLowestDegreeNode(int **graph, bool *uncolored, int vertices)
+// Function to find the node with the highest degree order
+int findHighestDegreeNodeLDO(int **graph, bool *uncolored, int vertices)
 {
-    int minDegree = __INT_MAX__, selectedNode = -1;
+    int maxDegree = -1, selectedNode = -1;
     for (int i = 0; i < vertices; i++)
     {
         if (!uncolored[i])
@@ -25,16 +25,16 @@ int findLowestDegreeNode(int **graph, bool *uncolored, int vertices)
                 degree++;
         }
         
-        if (degree < minDegree)
+        if (degree > maxDegree)
         {
-            minDegree = degree;
+            maxDegree = degree;
             selectedNode = i;
         }
     }
     return selectedNode;
 }
 
-// Least Degree Ordering (LDO) Graph Coloring Algorithm
+// Largest Degree Ordering (LDO) Graph Coloring Algorithm
 int ldoGraphColoring(int **graph, int vertices)
 {
     clock_t start_time = clock();
@@ -48,11 +48,11 @@ int ldoGraphColoring(int **graph, int vertices)
         uncolored[i] = true;
     }
 
-    int color = 1; // Başlangıç rengini 1 olarak değiştiriyoruz
+    int color = 1; 
     int step = 0;
     while (1)
     {
-        int node = findLowestDegreeNode(graph, uncolored, vertices);
+        int node = findHighestDegreeNodeLDO(graph, uncolored, vertices);
         if (node == -1)
             break; // No more uncolored nodes
 
@@ -84,9 +84,6 @@ int ldoGraphColoring(int **graph, int vertices)
         color++;
     }
 
-    printf("LDO Final Colors:\n");
-    for (int i = 0; i < vertices; i++)
-        printf("Node %d: Color %d\n", i + 1, ldoSolution[i]);
 
     free(uncolored);
     
