@@ -13,6 +13,7 @@
 #include "other_algorithms/rlf.h" // now provides rlfGraphColoring()
 #include "other_algorithms/wp.h" // now provides wpGraphColoring()
 #include "other_algorithms/ldo.h" // now provides ldoGraphColoring()
+#include "other_algorithms/ido.h" // now provides idoGraphColoring()
 
 // It automatically uses the instance file and the enhanced solution file.
 void runVerifier(const char *instFile)
@@ -170,6 +171,15 @@ int main(int argc, char *argv[])
 
         writeSolutionToFile(filename, "ldo", ldoColours, vertices, getLdoOrder());
         free(ldoColours);
+
+        // Run the Incidence Degree Ordering algorithm.
+        printf("Running IDO algorithm...\n");
+        idoGraphColoring(graph, vertices);
+        printf("IDO algorithm completed.\n");
+        int *idoColours = getIdoSolution();
+
+        writeSolutionToFile(filename, "ido", idoColours, vertices, getIdoOrder());
+        free(idoColours);
 
         // Automatically run the verifier for the enhanced solution.
 
