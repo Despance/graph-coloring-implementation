@@ -10,6 +10,8 @@
 #include "dsatur.h" // now provides dsaturSolution()
 // #include "enhanced_dsatur.h" // now provides enhancedDSaturSolution()
 #include "imp_color.h" // now provides calculateImpColor(), getSolution(), getOrderOfNodes()
+#include "other_algorithms/rlf.h" // now provides rlfGraphColoring()
+#include "other_algorithms/wp.h" // now provides wpGraphColoring()
 
 // It automatically uses the instance file and the enhanced solution file.
 void runVerifier(const char *instFile)
@@ -141,12 +143,32 @@ int main(int argc, char *argv[])
 
         free(enhancedColors);
 
+        // Run the RLF algorithm.
+        printf("Running RLF algorithm...\n");
+        rlfGraphColoring(graph, vertices);
+        printf("RLF algorithm completed.\n");
+        int *rlfColours = getRlfSolution();
+
+        writeSolutionToFile(filename, "rlf", rlfColours, vertices, getRlfSolutionOrder());
+        free(rlfColours);
+
+        // Run the Welsh-Powell algorithm.
+        printf("Running Welsh-Powell algorithm...\n");
+        wpGraphColoring(graph, vertices);
+        printf("Welsh-Powell algorithm completed.\n");
+        int *wpColours = getWpSolution();
+
+        writeSolutionToFile(filename, "wp", wpColours, vertices, getWpOrder());
+        free(wpColours);
+
         // Automatically run the verifier for the enhanced solution.
 
         runVerifier(filename);
 
         printf("DSatur-Time: %lf \n", totalTime_DSatur);
         printf("Importance-Time: %lf", totalTime_imp);
+        //printf("RLF-Time: %lf", totalTime_rlf);
+        //printf("Welsh-Powell-Time: %lf", totalTime_wp);
 
         free(nodeWeights);
         for (int i = 0; i < vertices; i++)
