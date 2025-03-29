@@ -12,6 +12,7 @@
 #include "imp_color.h" // now provides calculateImpColor(), getSolution(), getOrderOfNodes()
 #include "other_algorithms/rlf.h" // now provides rlfGraphColoring()
 #include "other_algorithms/wp.h" // now provides wpGraphColoring()
+#include "other_algorithms/ldo.h" // now provides ldoGraphColoring()
 
 // It automatically uses the instance file and the enhanced solution file.
 void runVerifier(const char *instFile)
@@ -160,6 +161,15 @@ int main(int argc, char *argv[])
 
         writeSolutionToFile(filename, "wp", wpColours, vertices, getWpOrder());
         free(wpColours);
+
+        // Run the ldo algorithm.
+        printf("Running LDO algorithm...\n");
+        ldoGraphColoring(graph, vertices);
+        printf("LDO algorithm completed.\n");
+        int *ldoColours = getLdoSolution();
+
+        writeSolutionToFile(filename, "ldo", ldoColours, vertices, getLdoOrder());
+        free(ldoColours);
 
         // Automatically run the verifier for the enhanced solution.
 
