@@ -21,6 +21,9 @@ int markNeighbours(int **graph, int nodes, bool *colored, bool *uncoloredNeighbo
 int getPossibleColorFirstFit(int **graph, int *colors, bool *colored, int nodes, int currentNode);
 int findHighestWeightedNode(int *nodeWeights, bool *colored, int vertices);
 int findHighestWeightedNeighbourNode(int **graph, int *nodeWeights, bool *colored, int nodes, int currentNode);
+int findHighestWeightedNodeWithNeighbourColor(int *nodeWeights, bool *colored, int nodes, bool **neighbourColors);
+int getNumOfOnes(bool *array, int size);
+void updateNeighbourColors(int **graph, int nodes, int *solution, int currentNode, bool *colored, bool **neighbourColors);
 void removeNode(int **graph, int nodes, int node);
 void resetWeights(int **graph, int *nodeWeights, int nodes);
 int getPossibleColorRandomFit(int **graph, int *colors, bool *colored, int nodes, int currentNode);
@@ -133,6 +136,10 @@ void colorGraphImpRecalculateWhenNeeded(int **graph, int *nodeWeights, int nodes
     int **tempGraph = (int **)malloc(nodes * sizeof(int *)); // Temporary graph
     int maxColor = 0;                                        // Maximum color used
     bool firstNode = true;                                   // Boolean to determine whether this is the first node after graph calculation
+    //bool **neighbourColors = (bool **)calloc(nodes, sizeof(bool *)); // Neighbour colors array, for neighbour weighting version
+    //for (int i = 0; i < nodes; i++)
+    //    neighbourColors[i] = (bool *)calloc(nodes, sizeof(bool));
+    
 
     // Allocate memory for tempGraph
     for (int i = 0; i < nodes; i++)
@@ -152,6 +159,7 @@ void colorGraphImpRecalculateWhenNeeded(int **graph, int *nodeWeights, int nodes
     for (int i = 0; i < nodes; i++)
     {
         int currentNode = findHighestWeightedNode(nodeWeights, colored, nodes);
+        //int currentNode = findHighestWeightedNodeWithNeighbourColor(nodeWeights, colored, nodes, neighbourColors); // for neighbour weighting version
         //currentNode = (previousNode != -1)? findHighestWeightedNeighbourNode(graph, nodeWeights, colored, nodes, previousNode) : currentNode; // for best neighbour coloring
         orderOfNodes[i] = currentNode;
         int color = getPossibleColorFirstFit(graph, solution, colored, nodes, currentNode); // Get potential First Fit color
@@ -179,17 +187,21 @@ void colorGraphImpRecalculateWhenNeeded(int **graph, int *nodeWeights, int nodes
         solution[currentNode] = color;
         colored[currentNode] = true;
         removeNode(tempGraph, nodes, currentNode); // Remove the colored node
+        //updateNeighbourColors(graph, nodes, solution, currentNode, colored, neighbourColors); // for neighbour weighting version
         //previousNode = currentNode; // for best neighbour coloring
     }
-
+    
     // free memory for tempGraph
     for (int i = 0; i < nodes; i++)
     {
         free(tempGraph[i]);
+        //free(neighbourColors[i]); // for neighbour weighting version
     }
     free(tempGraph);
+    //free(neighbourColors); // for neighbour weighting version
     free(colored);
 }
+
 
 // Coloring by removal of colored nodes and recalculation of the node weights
 void colorGraphImpRecalculate(int **graph, int *nodeWeights, int nodes, int n)
@@ -232,7 +244,7 @@ void colorGraphImpRecalculate(int **graph, int *nodeWeights, int nodes, int n)
 }
 
 // THIS METHOD HAS SOME ISSUES WITH THE ORDER OF NODES BUT WORKS
-// RESULTS ARE NOT VERY GOOD, ADVISE: USE IMP RECALCULATE INSTEAD
+// RESULTS ARE NOT VERY GOOD, ADVISE: USE IMP RECALCULATE WHEN NEEDED INSTEAD
 // Coloring by removal of colored nodes and recalculation of the node weights only when a new color is needed
 // This is the importance recalculate when needed with the "Flower" coloring 
 // instead of just coloring the highest weighted node, it colors its n degree neighbours too 
@@ -450,6 +462,56 @@ int findHighestWeightedNeighbourNode(int **graph, int *nodeWeights, bool *colore
     }
     return selectedNode;
 
+}
+
+
+// TRY THIS ALGORITHM WITH PREVENT ZEROS BEING TRUE AND FALSE (NOTE: FALSE SEEMS TO BE BETTER ON AVG)
+// Returns the highest weighted node that is not colored
+int findHighestWeightedNodeWithNeighbourColor(int *nodeWeights, bool *colored, int nodes, bool **neighbourColors){
+    bool preventZeros = false; 
+    int currentMultiplier = 1; // Current multiplier for the node weights
+    int maxWeight = -1, selectedNode = -1;
+    for (int i = 0; i < nodes; i++)
+    {
+        if (colored[i])
+            continue; // Skip colored nodes
+        currentMultiplier = getNumOfOnes(neighbourColors[i], nodes); // Get the number of colors used by the neighbours
+        if (preventZeros && currentMultiplier == 0)
+            currentMultiplier = 1; // If no colors are used, set multiplier to 1
+        if (nodeWeights[i]*currentMultiplier > maxWeight)
+        {
+            maxWeight = nodeWeights[i]*currentMultiplier;
+            selectedNode = i;
+        }
+    }
+    return selectedNode;
+}
+
+int getNumOfOnes(bool *array, int size)
+{   
+    int count = 0;
+    for (int i = 0; i < size; i++)
+    {
+        if (array[i])
+        {
+            count++;
+        }
+    }
+    return count;
+
+}
+
+// Neighbour colors is a 2D array that contains the nodes in the first dimension, and the colors used by the neighbours in the second dimension
+// This function updates the neighbour Colors array of the neighbouring nodes of the current Node
+void updateNeighbourColors(int **graph, int nodes, int *solution, int currentNode, bool *colored, bool **neighbourColors){
+    // Update the color numbers of the connected nodes
+    for (int i = 0; i < nodes; i++)
+    {
+        if (graph[currentNode][i] > 0 && !colored[i])
+        {
+            neighbourColors[i][solution[currentNode] - 1] = true; // Mark the color as used(-1 for indexing reasons, color 1 is at index 0)
+        }
+    }
 }
 
 // function to remove a node from the graph by setting the according adjacency matrix values to 0
