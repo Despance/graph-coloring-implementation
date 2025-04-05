@@ -9,7 +9,8 @@
 #include "graph_constructor.h"
 #include "dsatur.h" // now provides dsaturSolution()
 // #include "enhanced_dsatur.h" // now provides enhancedDSaturSolution()
-#include "imp_color.h" // now provides calculateImpColor(), getSolution(), getOrderOfNodes()
+// #include "imp_color.h" // now provides calculateImpColor(), getSolution(), getOrderOfNodes()
+#include "rlf_color.h" // now provides rlfColor(), getSolution(), getOrderOfNodes()
 
 // It automatically uses the instance file and the enhanced solution file.
 void runVerifier(const char *instFile)
@@ -133,8 +134,12 @@ int main(int argc, char *argv[])
         int *nodeWeights = (int *)calloc(vertices, sizeof(int));
 
         printf("Running Importance Coloring algorithm...\n");
-        calculateImpColor(graph, nodeWeights, vertices, 1);
+        // calculateImpColor(graph, nodeWeights, vertices, 1);
+        rlfColor(graph, vertices); // Call the RLF color function
         int *enhancedColors = getSolution();
+        for(int i = 0; i< vertices; i++){
+            enhancedColors[i] = enhancedColors[i] + 1; // Adjust the colors to start from 1
+        }
         printf("Importance Coloring algorithm completed.\n");
 
         writeSolutionToFile(filename, "importance", enhancedColors, vertices, getOrderOfNodes());
