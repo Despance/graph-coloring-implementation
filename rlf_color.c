@@ -56,8 +56,8 @@ void rlfColor(int **graph, int nodes){
     }
     
     // Call the coloring function
-    standartRLFColor(tempGraph, nodes, solution, orderOfNodes, colored);
-    // importanceRLFColor(tempGraph, nodes, solution, orderOfNodes, colored); // Pass NULL for nodeWeights if not used
+    // standartRLFColor(tempGraph, nodes, solution, orderOfNodes, colored);
+    importanceRLFColor(tempGraph, nodes, solution, orderOfNodes, colored); // Pass NULL for nodeWeights if not used
 
     // Free allocated memory
     free(colored);
@@ -107,19 +107,20 @@ void importanceRLFColor(int **graph, int nodes, int *solution, int *orderOfNodes
         // STEP 1: Find the node with the highest weight as a starting point(this is the modified version)
         currentNode = getNodeWithLargesNumberOfNeighbours(graph, nodes, colored);
 
-        resetWeights(graph, nodeWeights, nodes); // Reset the node weights
-        updateNodeWeights(graph, nodeWeights, nodes, 2); // Update node weights
-        //currentNode = findHighestWeightedNode(nodeWeights, colored, nodes);
+        // resetWeights(graph, nodeWeights, nodes); // Reset the node weights
+        // updateNodeWeights(graph, nodeWeights, nodes, 2); // Update node weights
+        // currentNode = findHighestWeightedNode(nodeWeights, colored, nodes);
         
         if(currentNode == -1){
             break; // No more uncolored nodes
         }
 
         // STEP 2: find the maximum independent set in the graph. then color and remove these nodes
-        colorMaxIndependentSet(graph, nodes, solution, orderOfNodes, colored, currentNode);
-        //colorMaxIndependentSetImportance(graph, nodes, solution, orderOfNodes, colored, currentNode, nodeWeights);
+        //colorMaxIndependentSet(graph, nodes, solution, orderOfNodes, colored, currentNode);
+        colorMaxIndependentSetImportance(graph, nodes, solution, orderOfNodes, colored, currentNode, nodeWeights);
         
     }
+    free(nodeWeights); // Free the node weights
 }
 
 void colorMaxIndependentSetImportance(int **graph, int nodes, int *solution, int *orderOfNodes, bool *colored, int currentNode, int *nodeWeights){
@@ -232,28 +233,37 @@ int findMaxIndependentNodeImportance(int **graph, int nodes, bool *colored, bool
     }
 
     int maxNeighbours = 0;
-    int maxUnCommon = 0x7FFFFFFF; // init to largest value
-    bool isMaxUnCommonSet = true;
+    // int maxUnCommon = 0x7FFFFFFF; // init to largest value // this is for the og tie breaker
+    // bool isMaxUnCommonSet = true; // for og tie breaker
     int nodeWithMaxNeighbours = -1;
     for(int i = 0; i < nodes; i++){
         if(colored[i] || neighboursOfCurrentSet[i] || currentSet[i]){
             continue; // Skip colored nodes
         }
         int current = getNumOfNeighboursInSet(graph, nodes, neighboursOfCurrentSet, i);
+        
         // if the current node has more common neighbours than the max, update the max
         if(current > maxNeighbours){
             maxNeighbours = current;
             nodeWithMaxNeighbours = i;
-            isMaxUnCommonSet = false;
+            // isMaxUnCommonSet = false; // for og tie breaker
         }
         else if(current == maxNeighbours){
+            // for the first node, if it's neighbour count is 0, it will try to access index -1, this if is to prevent that
+            if(nodeWithMaxNeighbours == -1){ 
+            maxNeighbours = current;
+            nodeWithMaxNeighbours = i;
+            continue; // skip the rest of the loop
+            }
+
             int currentNodeWeight = nodeWeights[i];
             int maxNodeWeight = nodeWeights[nodeWithMaxNeighbours];
             if(currentNodeWeight > maxNodeWeight){
                 maxNeighbours = current;
                 nodeWithMaxNeighbours = i;
-                isMaxUnCommonSet = false;
+                // isMaxUnCommonSet = false; // for og tie breaker
             }
+            /*
             else if(currentNodeWeight == maxNodeWeight){
                 int currentUnCommon = getNumOfNeighboursNotInSet(graph, nodes, neighboursOfCurrentSet, i);
                 if(!isMaxUnCommonSet){ // if max uncommon is not up to date, recompute  it
@@ -266,24 +276,9 @@ int findMaxIndependentNodeImportance(int **graph, int nodes, bool *colored, bool
                     maxUnCommon = currentUnCommon;
                 }
             }
+            */
             
         }
-        /*
-        // original tie breaker heuristic
-        else if(current == maxNeighbours){
-
-            int currentUnCommon = getNumOfNeighboursNotInSet(graph, nodes, neighboursOfCurrentSet, i);
-            if(!isMaxUnCommonSet){ // if max uncommon is not up to date, recompute  it
-                maxUnCommon = getNumOfNeighboursNotInSet(graph, nodes, neighboursOfCurrentSet, nodeWithMaxNeighbours);
-                isMaxUnCommonSet = true;
-            }
-            if(currentUnCommon < maxUnCommon){
-                maxNeighbours = current;
-                nodeWithMaxNeighbours = i;
-                maxUnCommon = currentUnCommon;
-            }
-        }
-        */
     }
 
     free(neighboursOfCurrentSet);
